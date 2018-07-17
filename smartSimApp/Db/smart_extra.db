@@ -1,0 +1,79 @@
+# Database for Animatics SmartMotor
+
+record(ai,"$(P)$(M):TEMP") {
+    field(DESC,"Smart Motor Temp")
+    field(EGU,"C")
+    field(PREC,"3")
+    field(HIGH, "50")
+    field(HSV, "MINOR")
+    field(HIHI, "55")
+    field(HSV, "MAJOR")
+    field(DTYP, "asynFloat64")
+    field(SCAN, "I/O Intr")
+    field(INP,"@asyn($(PORT),$(ADDR))SMART_TEMP")
+}
+record(ai,"$(P)$(M):TORQUE") {
+    field(DESC,"Smart Motor Torque")
+    field(EGU,"mA")
+    field(PREC,"3")
+    field(HIGH, "2100")
+    field(HSV, "MINOR")
+    field(HIHI, "2700")
+    field(HSV, "MAJOR")
+    field(DTYP, "asynFloat64")
+    field(SCAN, "I/O Intr")
+    field(INP,"@asyn($(PORT),$(ADDR))SMART_TORQUE")
+}
+record(stringin,"$(P)$(M):FW") {
+    field(DESC,"Smart Motor FW")
+    field(DTYP, "asynOctetRead")
+    field(SCAN, "I/O Intr")
+    field(INP,  "@asyn($(PORT),0)SMART_FW")
+}
+
+record(stringin,"$(P)$(M):ERROR") {
+    field(DESC,"Smart Motor Error String")
+    field(DTYP, "asynOctetRead")
+    field(SCAN, "I/O Intr")
+    field(INP,  "@asyn($(PORT),0)SMART_ERROR")
+}
+
+record(ai,"$(P)$(M):MCTR0") {
+    field(DESC,"Motor Torque")
+    field(PREC,"3")
+    field(DTYP, "asynFloat64")
+    field(SCAN, "I/O Intr")
+    field(INP,"@asyn($(PORT),$(ADDR))SMART_CTR0")
+}
+record(ai,"$(P)$(M):MCTR1") {
+    field(DESC,"Motor Torque")
+    field(PREC,"3")
+    field(DTYP, "asynFloat64")
+    field(SCAN, "I/O Intr")
+    field(INP,"@asyn($(PORT),$(ADDR))SMART_CTR1")
+}
+
+
+record(calcout, "$(P)$(M):BRKCNTCLC") {
+    field(DESC,"Number of brake cycles")
+    field(CALC,"A+B")
+    field(OUT,"$(P)$(M):BRKCNT")
+    field(INPA,"$(P)$(M):BRKCNT PP")
+    field(INPB,"$(P)$(M):MOTR.CNEN CP")
+    field(SCAN,"Passive")
+}
+
+record(ao, "$(P)$(M):BRKCNT") {
+    field(DESC,"Number of brake cycles")
+    field(VAL, "0")
+    field(PINI, "YES")
+    info(autosaveFields, "VAL")
+}
+
+record(ai,"$(P)$(M):STATUS") {
+    field(DESC,"Smart motor status")
+    field(PREC,"3")
+    field(DTYP, "asynInt32")
+    field(SCAN, "I/O Intr")
+    field(INP,"@asyn($(PORT),$(ADDR))SMART_STATUS")
+}

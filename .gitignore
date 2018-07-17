@@ -1,0 +1,5 @@
+O.*
+*.sw[op]
+/db
+/dbd
+/bin

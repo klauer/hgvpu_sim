@@ -1,0 +1,29 @@
+file HGVPU_masterMotorStatus.db
+{
+pattern { AXIS  , PORT, ADDR }
+        { "USW" , S7  , 0    }
+}
+
+file HGVPU_real_motor.db
+{
+pattern {  AXIS , PORT, ADDR, DESC     , DIR, DLLM, DHLM, MRES  , VELO, VBAS, VMAX, ACCL, TWV, SREV }
+        {  "USW", S7  , 0   , "Motor 1", Pos, 0   , 0   , 0.0001, 0.5 , 0.01, 3.67, 1   , 0.1, 4000 }
+        {  "DSW", S7  , 1   , "Motor 2", Pos, 0   , 0   , 0.0001, 0.5 , 0.01, 3.67, 1   , 0.1, 4000 }
+        {  "DSA", S7  , 2   , "Motor 3", Pos, 0   , 0   , 0.0001, 0.5 , 0.01, 3.67, 1   , 0.1, 4000 }
+        {  "USA", S7  , 3   , "Motor 4", Pos, 0   , 0   , 0.0001, 0.5 , 0.01, 3.67, 1   , 0.1, 4000 }
+} 
+
+file HGVPU_virt_motor.db
+{
+pattern { AXIS , PORT, ADDR, DESC       , DIR, DLLM, DHLM, MRES   , PREC, EGU, VELO, VBAS, VMAX, ACCL, TWV, RRES, RDBL     , DEST     }
+        { "Gap", S7  , 4   , "Gap Motor", Pos, 0   , 0   , 1.27e-5, 4   , mm , 0.5 , 0.01, 3.67, 1   , 0.1, 1   , "Gap.VAL", "GapSet" } 
+} 
+
+file smart_extra.db
+{
+pattern { P      , M    , PORT, ADDR }
+        { "$(U):", "USW", S7  , 0    }
+        { "$(U):", "DSW", S7  , 1    }
+        { "$(U):", "DSA", S7  , 2    }
+        { "$(U):", "USA", S7  , 3    }
+}

@@ -1,0 +1,35 @@
+# Gearhead = 100:1
+# Screw pitch = 5.08 mm
+# 2000 motor counts / rev
+# 100 motor revs = 1 turn of screw:
+#	5.08 mm / 100 motor rev = 0.0508 mm/motor rev
+# MRES = (distance/motor rev)/(counts/motor rev)
+# MRES = (0.0508 mm/rev) / (2000 counts/rev) = 2.54x10^-5 mm/count
+# MRES = 0.00254x10^-5 microns/motor count
+#
+# Moving from 100mm -> 7.2mm in 1 minute = 92.8mm/min
+# This is 1.55mm/sec. 1.55mm/sec / 0.0508mm/rev = 30.45rev/sec
+# for the full gap displacement. Each motor needs to move at
+# 1/2 that speed or 15.225rev/sec for 1 min travel time
+record(motor, "$(U):$(IDMOTOR)Motor") {
+	field(DESC, "$(MDESC)")
+	field(SCAN, "Passive")
+	field(DTYP, "asynMotor")
+	field(DISS, "NO_ALARM")
+	field(DIR, "Pos")
+	field(SBAS,"0.085")
+	field(ACCL,"5")
+	field(BACC,"0")
+	field(SREV,"2000")
+	field(MRES,"2.54e-05")
+	field(UREV,"0.0508")
+	field(S, "0.773")
+	field(DHLM,"$(MH)")
+	field(DLLM,"$(ML)")
+	field(TWV,"0.01")
+	field(PREC, "5")
+	field(EGU, "mm")
+	field(OUT, "@asyn($(PORT),$(ADDR))")
+	field(FOFF, "Frozen")
+	info(autosaveFields_pass0, "DVAL")
+}

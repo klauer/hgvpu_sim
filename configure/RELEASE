@@ -1,0 +1,39 @@
+# RELEASE - Location of external support modules
+#
+# IF YOU CHANGE ANY PATHS in this file or make API changes to
+# any modules it refers to, you should do a "make rebuild" in
+# this application's top level directory.
+#
+# The EPICS build process does not check dependencies against
+# any files from outside the application, so it is safest to
+# rebuild it completely if any modules it depends on change.
+#
+# Host- or target-specific settings can be given in files named
+#  RELEASE.$(EPICS_HOST_ARCH).Common
+#  RELEASE.Common.$(T_A)
+#  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+#
+# This file is parsed by both GNUmake and an EPICS Perl script,
+# so it may ONLY contain definititions of paths to other support
+# modules, variable definitions that are used in module paths,
+# and include statements that pull in other RELEASE files.
+# Variables may be used before their values have been set.
+# Build variables that are NOT used in paths should be set in
+# the CONFIG_SITE file.
+
+SUPPORT_=/Users/klauer/.cache/epics/R7.0.1.1/
+EPICS_BASE = $(SUPPORT_)/base
+SNCSEQ=$(SUPPORT_)/support/seq/2.2.5
+AUTOSAVE=$(SUPPORT_)/support/autosave/5-9
+SSCAN=$(SUPPORT_)/support/sscan/2-11-1
+BUSY=$(SUPPORT_)/support/busy/1-7
+ASYN=$(SUPPORT_)/support/asyn/4-33
+CALC=$(SUPPORT_)/support/calc/3-7
+MOTOR_=/Users/klauer/docs/Repos/motor_to_collab
+AREA_DETECTOR=$(SUPPORT_)/support/areadetector/3-2
+
+# These lines allow developers to override these RELEASE settings
+# without having to modify this file directly.
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+-include $(TOP)/configure/RELEASE.local

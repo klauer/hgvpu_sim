@@ -1,0 +1,737 @@
+record(ai,"$(U):GapSet") {
+  field(DESC,"Set Gap of the ID")
+  field(PINI,"YES")
+  field(ASG,"$(U)_USER")
+  field(INP,"100")
+  field(PREC,"3")
+  field(EGU,"mm")
+  field(HOPR,"$(DH)")
+  field(LOPR,"$(DL)")
+  field(FLNK,"$(U):StartGaps.PROC PP NMS")
+}
+record(fanout,"$(U):StartGaps") {
+  field(DESC,"Process on GapSet")
+  field(LNK1,"$(U):USGapSet")
+  field(LNK2,"$(U):DSGapSet")
+  field(LNK3,"$(U):OldGapSet")
+  field(LNK4,"$(U):GapCheck")
+}
+record(ai,"$(U):TaperGapSet") {
+  field(DESC,"Set Taper of the ID")
+  field(PINI,"YES")	
+  field(ASG,"$(U)_USER")
+  field(PINI,"YES")
+  field(INP,"0")
+  field(PREC,"3")
+  field(EGU,"mm")
+  field(HOPR,"0.150")
+  field(LOPR,"-0.150")
+  field(FLNK,"$(U):StartTaper.PROC PP NMS")
+}
+####################################################
+record(fanout,"$(U):StartTaper") {
+  field(DESC,"Process on GapSet")
+  field(LNK1,"$(U):USGapSet.PROC PP NMS")
+  field(LNK2,"$(U):DSGapSet.PROC PP NMS")
+  field(LNK3,"$(U):OldTaperSet.PROC PP NMS")
+  field(LNK4,"$(U):TaperCheck.PROC PP NMS")
+}
+record(calc,"$(U):USGapSet") {
+  field(CALC,"A+(B/2.0)")
+  field(DESC,"Upstream GapSet")
+  field(INPA,"$(U):GapSet.VAL NPP NMS")
+  field(INPB,"$(U):TaperGapSet.VAL NPP NMS")
+  field(EGU,"mm")
+  field(PREC,"4")
+}
+record(calc,"$(U):DSGapSet") {
+  field(CALC,"A-(B/2.0)")
+  field(DESC,"Downstream GapSet")
+  field(INPA,"$(U):GapSet.VAL NPP NMS")
+  field(INPB,"$(U):TaperGapSet.VAL NPP NMS")
+  field(EGU,"mm")
+  field(PREC,"4")
+}
+
+record(calc,"$(U):OldGapSet") {
+  field(DESC,"Previous Gap Set Value")
+  field(CALC,"A")
+  field(INPA,"$(U):StoreGapSet.VAL NPP NMS")
+  field(INPB,"$(U):StoreGapSet.VAL PP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):StoreGapSet") {
+  field(DESC,"Store Gap Set of the ID")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(INP,"$(U):GapSet.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calc,"$(U):OldTaperSet") {
+  field(DESC,"Previous Taper Set Value")
+  field(CALC,"A")
+  field(INPA,"$(U):StoreTaperSet.VAL NPP NMS")
+  field(INPB,"$(U):StoreTaperSet.VAL PP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):StoreTaperSet") {
+  field(DESC,"Store Taper Set of the ID")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(INP,"$(U):TaperGapSet.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+########################################################
+# MAY NEED TO DO SOMETHING WITH THE OUT FIELD HERE
+record(calcout,"$(U):GapCheck") {
+  field(DESC,"Check Invalid Gap")
+  field(CALC,"(A<C||B<C||A>D||B>D)?1:0")
+  field(INPA,"$(U):USGapSet.VAL NPP NMS")
+  field(INPB,"$(U):DSGapSet.VAL NPP NMS")
+  field(INPC,"$(U):DeviceLimit.VAL NPP NMS")
+  field(INPD,"$(U):FullOpenGap.VAL NPP NMS")
+  field(INPD,"$(U):DeviceLimit.DRVH NPP NMS")
+  field(OUT,"$(U):USMotorSet.PROC PP NMS")
+  field(OOPT,"When Zero")
+  field(DOPT,"Use CALC")
+  field(MDEL,"-1")
+  field(PREC,"4")
+  field(FLNK,"$(U):GapCheckMsg.PROC")
+}
+record(scalcout,"$(U):GapCheckMsg") {
+  field(DESC,"Generates messages")
+  field(CALC,"A?BB:AA")
+  field(INPA,"$(U):GapCheck.VAL NPP NMS")
+  field(AA,"Requested Position OK")
+  field(BB,"Gap/Taper Out of Range")
+  field(OUT,"$(U):Message1.VAL PP NMS")
+  field(OOPT,"Every Time")
+  field(FLNK,"$(U):GapCheckWrong.PROC")
+}
+record(calcout,"$(U):GapCheckWrong") {
+  field(DESC,"Reset GapSet")
+  field(CALC,"A")
+  field(INPA,"$(U):GapCheck.VAL NPP NMS")
+  field(OUT,"$(U):ResetGapSetSQ.PROC PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+}
+record(seq,"$(U):ResetGapSetSQ") {
+  field(DESC,"Reset to Old GapSet")
+  field(DOL1,"0")
+  field(LNK1,"$(U):GapCheck.DISV NPP NMS")
+  field(DOL2,"$(U):OldGapSet.VAL NPP NMS")
+  field(LNK2,"$(U):GapSet.VAL PP NMS")
+  field(DOL3,"3")
+  field(LNK3,"$(U):MakeMessage2.A PP NMS")
+  field(DOL4,"1")
+  field(LNK4,"$(U):GapCheck.DISV NPP NMS")
+}
+########################################################
+# If either end will go outside the operational limits set for the
+# device or the desired taper > maximum allowed taper the value is
+# non-zero for this record and the desired gap will not be set
+record(calcout,"$(U):TaperCheck") {
+  field(DESC,"Check Invalid Taper")
+  field(CALC,"ABS(E)>F?2:(A<C||B<C||A>D||B>D)?1:0")
+  field(INPA,"$(U):USGapSet.VAL NPP NMS")
+  field(INPB,"$(U):DSGapSet.VAL NPP NMS")
+  field(INPC,"$(U):DeviceLimit.VAL NPP NMS")
+  field(INPD,"$(U):DeviceLimit.DRVH NPP NMS")
+  field(INPE,"$(U):TaperGapSet.VAL NPP NMS")
+  field(INPF,"$(U):MaxTaper.VAL NPP NMS")
+  field(OUT,"$(U):USMotorSet.PROC PP NMS")
+  field(OOPT,"When Zero")
+  field(DOPT,"Use CALC")
+  field(MDEL,"-1")
+  field(PREC,"4")
+  field(FLNK,"$(U):TaperCheckMsg.PROC")
+}
+record(scalcout,"$(U):TaperCheckMsg") {
+  field(DESC,"Generates messages")
+  field(CALC,"A==2?CC:A?BB:AA")
+  field(INPA,"$(U):TaperCheck.VAL NPP NMS")
+  field(AA,"Requested Taper OK")
+  field(BB,"Gap/Taper Out of Range")
+  field(CC,"Taper Too Large")
+  field(OUT,"$(U):Message1.VAL PP NMS")
+  field(OOPT,"Every Time")
+  field(FLNK,"$(U):TaperCheckWrong.PROC")
+}
+record(calcout,"$(U):TaperCheckWrong") {
+  field(DESC,"Reset TaperGapSet")
+  field(CALC,"A")
+  field(INPA,"$(U):TaperCheck.VAL NPP NMS")
+  field(OUT,"$(U):ResetTaperSetSQ.PROC PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+}
+# Resets gap to old position if wrong taper is entered
+record(seq,"$(U):ResetTaperSetSQ") {
+  field(DESC,"Reset to Old TaperSet")
+  field(DOL1,"0")
+  field(LNK1,"$(U):TaperCheck.DISV NPP NMS")
+  field(DOL2,"$(U):OldTaperSet.VAL NPP NMS")
+  field(LNK2,"$(U):TaperGapSet.VAL PP NMS")
+  field(DOL3,"3")
+  field(LNK3,"$(U):MakeMessage2.A PP NMS")
+  field(DOL4,"1")
+  field(LNK4,"$(U):TaperCheck.DISV NPP NMS")
+}
+record(scalcout,"$(U):MakeMessage2") {
+  field(DESC,"Generates messages")
+  field(CALC,"A==3?EE:A==2?DD:A==0?AA:BB")
+  field(AA,"Energy <=> Gap Conversion OK")
+  field(BB,"Energy <=> Gap Out of Range!!")
+  field(DD,"Energy/Taper Out of Range!!")
+  field(EE,"")
+  field(OUT,"$(U):Message2.VAL PP NMS")
+  field(OOPT,"Every Time")
+}
+
+########################################################
+# Allows a gap move without pressing the start button
+# ScanGapCheck presses the start button
+########################################################
+record(ai,"$(U):ScanGap") {
+  field(DESC,"ID Gap Scan Input")
+  field(ASG,"$(U)_ACTION")
+  field(PREC,"3")
+  field(EGU,"mm")
+  field(FLNK,"$(U):ScanGapSQ.PROC")
+}
+record(seq,"$(U):ScanGapSQ") {
+  field(DESC,"Start the Gap Scan")
+  field(DOL1,"$(U):ScanGap.VAL NPP NMS")
+  field(LNK1,"$(U):GapSet.VAL PP NMS")
+  field(DOL2,"1")
+  field(DLY2,".05")
+  field(LNK2,"$(U):ScanGapCheck.PROC PP NMS")
+}
+record(calcout,"$(U):ScanGapCheck") {
+  field(DESC,"Start Device if Good Gap")
+  field(CALC,"!A")
+  field(INPA,"$(U):GapCheck.VAL NPP NMS")
+  field(OUT,"$(U):Start.VAL PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+}
+########################################################
+# Sets up the device operational limits
+record(ao,"$(U):DeviceLimit") {
+  field(DESC,"ID Limit Settings")
+  field(ASG,"OPERATOR")
+  field(DOL,"$(BL)")
+  field(OMSL,"closed_loop")
+  field(PREC,"3")
+  field(EGU,"mm")
+  field(DRVH,"$(DH)")
+  field(DRVL,"$(DL)")
+  field(HOPR,"100")
+  field(LOPR,"7.1")
+  field(FLNK,"$(U):OldDeviceLimit.PROC")
+}
+record(calc,"$(U):OldDeviceLimit") {
+  field(DESC,"Previous DeviceLimit")
+  field(CALC,"A")
+  field(INPA,"$(U):StoreDeviceLimit.VAL NPP NMS")
+  field(INPB,"$(U):StoreDeviceLimit.VAL PP NMS")
+  field(PREC,"3")
+  field(EGU,"mm")
+}
+record(ai,"$(U):StoreDeviceLimit") {
+  field(DESC,"Store DeviceLimit of the ID")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(INP,"$(U):DeviceLimit.VAL NPP NMS")
+  field(PREC,"3")
+  field(EGU,"mm")
+}
+# Check that the device is still at a gap < the new
+# device limit VAL field if it was changed
+record(calcout,"$(U):DeviceLimitCheck") {
+  field(DESC,"Check User Limit")
+  field(CALC,"(A>B||A>C)?1:0")
+  field(INPA,"$(U):DeviceLimit.VAL CP NMS")
+  field(INPB,"$(U):USGap.VAL NPP NMS")
+  field(INPC,"$(U):DSGap.VAL NPP NMS")
+  field(OUT,"$(U):DeviceLimitResetSQ.PROC PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+  field(MDEL,"-1")
+  field(FLNK,"$(U):DeviceLimitCheckMsg.PROC")
+}
+record(scalcout,"$(U):DeviceLimitCheckMsg") {
+  field(DESC,"Generates messages")
+  field(CALC,"A?BB:AA")
+  field(INPA,"$(U):DeviceLimitCheck.VAL NPP NMS")
+  field(AA,"ID Limit Value OK")
+  field(BB,"ID Limit Out of Range")
+  field(OUT,"$(U):Message1.VAL PP NMS")
+  field(OOPT,"Every Time")
+}
+record(seq,"$(U):DeviceLimitResetSQ") {
+  field(DESC,"Reset to Old DeviceLimit")
+  field(DOL1,"0")
+  field(DLY1,"0.1")
+  field(LNK1,"$(U):DeviceLimitCheck.DISV NPP NMS")
+  field(DOL2,"$(U):OldDeviceLimit.VAL NPP NMS")
+  field(LNK2,"$(U):DeviceLimit.VAL PP NMS")
+  field(DOL3,"1")
+  field(LNK3,"$(U):DeviceLimitCheck.DISV NPP NMS")
+}
+########################################################
+
+record(stringin,"$(U):Device") {
+  field(DESC,"Device Identifier String")
+}
+record(stringout,"$(U):Message1") {
+  field(DESC,"ID Control Status")
+}
+record(stringout,"$(U):Message2") {
+  field(DESC,"Energy Conversion Status")
+}
+#######################################################
+
+record(ai,"$(U):LinearAccuracy") {
+  field(DESC,"Linear Encoder Accuracy")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(INP,"0.0001")
+  field(PREC,"4")
+  field(EGU,"mm")
+  field(FLNK,"$(U):PositionAccuracy.PROC")
+}
+record(ai,"$(U):DeviceCreep") {
+  field(DESC,"Amount of Creep")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(INP,"0.050")
+  field(PREC,"3")
+  field(EGU,"mm")
+}
+record(ao,"$(U):MaxTaper") {
+  field(DESC,"ID Max Taper Allowed")
+  field(ASG,"SYSTEM")
+  field(DOL,"0.200")
+  field(OMSL,"closed_loop")
+  field(PREC,"3")
+  field(EGU,"mm")
+  field(DRVH,"0.199")
+  field(DRVL,"-0.199")
+  field(HOPR,"0.199")
+  field(LOPR,"-0.199")
+}
+# Motor stall check amount
+# How far to allow the motor to move if gap does not change
+# The motor will move at 1.55mm/sec in order to move from
+# min to max gap in 1 minute.
+record(ao,"$(U):StallCheckAmount") {
+  field(DESC,"Value for Stall Check")
+  field(ASG,"SYSTEM")
+  field(DOL,"0.5")
+  field(OMSL,"closed_loop")
+  field(PREC,"2")
+  field(EGU,"mm")
+  field(DRVH,"1.0")
+  field(DRVL,"0.0")
+  field(HOPR,"1.0")
+  field(LOPR,"0.0")
+}
+record(ao,"$(U):AllowedMotorReset") {
+  field(DESC,"Value for Motor Reset")
+  field(ASG,"SYSTEM")
+  field(DOL,"0.25")
+  field(OMSL,"closed_loop")
+  field(PREC,"2")
+  field(EGU,"mm")
+  field(DRVH,"10.0")
+  field(DRVL,"0.0")
+  field(HOPR,"10.0")
+  field(LOPR,"0.0")
+}
+#######################################################
+# How close to the target position to move before 
+# stopping motion
+record(ao,"$(U):DeadbandGap") {
+  field(DESC,"ID Gap Deadband")
+  field(ASG,"$(U)_USER")
+  field(PINI,"YES")
+  field(DOL,"0.150")
+  field(OMSL,"closed_loop")
+  field(EGU,"microns")
+  field(DRVH,"1000")
+  field(PREC,"3")
+  field(FLNK,"$(U):PositionAccuracy.PROC")
+}
+########################################################
+# No rotary encoder or encoder select button
+# Position accuracy is the maximum of the Linear Encoder
+# accuracy or the DeadBandGap (mm) + 0.1 micron
+record(calc,"$(U):PositionAccuracy") {
+  field(DESC,"ID Positioning Accuracy")
+  field(CALC,"MAX((A/B+C),D)")
+  field(INPA,"$(U):DeadbandGap.VAL NPP NMS")
+  field(INPB,"1000.0")
+  field(INPC,"0.0001")
+  field(INPD,"$(U):LinearAccuracy.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+########################################################
+# Start the ID moving button
+########################################################
+record(bi,"$(U):Start") {
+  field(DESC,"Start Moving The ID")
+  field(ASG,"$(U)_ACTION")
+  field(ONAM,"Start")
+  field(FLNK,"$(U):DeviceStart.PROC PP NMS")
+}
+record(seq,"$(U):DeviceStart") {
+  field(DESC,"Start Device Action")
+  field(SDIS,"$(U):GlobalBusy.VAL NPP NMS")
+  field(DOL1, "1")
+  field(LNK1,"$(U):BusyRecord PP NMS")
+  field(DOL2,"1")
+  field(LNK2,"$(U):DeviceActive.VAL PP NMS")
+  field(DOL3,"1")
+  field(LNK3,"$(U):Busy.VAL PP NMS")
+  field(DOL5,"1")
+  field(LNK5,"$(U):StartStop.VAL PP NMS")
+  field(DOL6,"1")
+  field(LNK6,"$(U):DeviceStartMsg.PROC PP NMS")
+  field(DOL7,"3")
+  field(LNK7,"$(U):MakeMessage2.A PP NMS")
+  field(DOL8,"1")
+  field(LNK8,"$(U):CalcDirection.PROC PP NMS")
+  field(DOL9,"1")
+  field(DLY9,"0.2")
+  field(LNK9,"$(U):DestinationCheck.PROC PP NMS")
+}
+
+record(scalcout,"$(U):DeviceStartMsg") {
+  field(DESC,"Generates messages")
+  field(CALC,"AA")
+  field(AA,"Device Started")
+  field(OUT,"$(U):Message1.VAL PP NMS")
+  field(OOPT,"Every Time")
+}
+########################################################
+record(ai,"$(U):StartStop") {
+  field(DESC,"State of Start/Stop")
+  field(PINI,"YES")
+  field(ASG,"SYSTEM")
+  field(MDEL,"-1")
+}
+########################################################
+# Stop ID motion button
+record(bi,"$(U):Stop") {
+  field(DESC,"Stop The ID")
+  field(ASG,"$(U)_ACTION")
+  field(ONAM,"Stop")
+  field(FLNK,"$(U):DeviceStop")
+}
+record(seq,"$(U):DeviceStop") {
+  field(DESC,"Set All Device Action")
+  field(DOL1,"0")
+  field(LNK1,"$(U):DeviceActive.VAL PP NMS")
+  field(DOL2,"1")
+  field(LNK2,"$(U):StopMotors.PROC PP NMS")
+  field(DOL3,"0")
+  field(LNK3,"$(U):StartStop.VAL PP NMS")
+  field(DOL4,"1")
+  field(LNK4,"$(U):CalibrateMotors.PROC PP NMS")
+  field(DOL5,"1")
+  field(LNK5,"$(U):DeviceStopMsg.PROC PP NMS")
+  field(DOL6,"3")
+  field(LNK6,"$(U):MakeMessage2.A PP NMS")
+}
+record(scalcout,"$(U):DeviceStopMsg") {
+  field(DESC,"Generates messages")
+  field(CALC,"AA")
+  field(AA,"Device Stopped!!")
+  field(OUT,"$(U):Message1.VAL PP NMS")
+  field(OOPT,"Every Time")
+}
+########################################################
+# Tells if the ID is actively doing something
+########################################################
+record(bo,"$(U):DeviceActive") {
+  field(DESC,"Device Active")
+  field(ZNAM,"Done")
+  field(ONAM,"Active")
+  field(OSV,"MAJOR")
+}
+#######################################################
+# tells if the ID is moving or not and provides a CA put
+# callback from BusyRecord
+########################################################
+record(bo,"$(U):Busy") {
+  field(DESC,"ID Busy Moving")
+  field(ZNAM,"Done Moving")
+  field(ONAM,"Moving")
+  field(OSV,"MAJOR")
+  field(FLNK, "$(U):ClearBusy.PROC PP NMS")
+}
+record(bo,"$(U):ClearBusy") {
+  field(SDIS, "$(U):Busy")
+  field(DISV, "1")
+  field(OUT, "$(U):BusyRecord CA")
+}
+record(busy,"$(U):BusyRecord") {
+  field(DESC,"ID Busy Moving")
+  field(ZNAM,"Done Moving")
+  field(ONAM,"Moving")
+  field(OSV,"MAJOR")
+}
+
+###############################################
+record(calcout,"$(U):ResetBusy") {
+  field(DESC,"Reset Busy when done")
+  field(CALC,"A||B||(!C)")
+  field(INPA,"$(U):MotorsMoving.VAL CP NMS")
+  field(INPB,"$(U):DeviceActive.VAL CP NMS")
+  field(INPC,"$(U):Busy.VAL NPP NMS")
+  field(OUT,"$(U):Busy.VAL PP NMS")
+  field(OOPT,"When Zero")
+  field(DOPT,"Use CALC")
+}
+########################################################
+########################################################
+
+record(calc,"$(U):DeviceTaper") {
+  field(DESC,"Device in Taper State")
+  field(SCAN,"2 second")
+  field(CALC,"ABS(A-B)>C&&ABS(A-B)>D?1:0")
+  field(INPA,"$(U):USGap NPP NMS")
+  field(INPB,"$(U):DSGap NPP NMS")
+  field(INPC,"$(U):PositionAccuracy NPP NMS")
+  field(INPD,"0.050")
+  field(FLNK,"$(U):Taper")
+}
+record(bo,"$(U):Taper") {
+  field(DESC,"ID Taper Flag")
+  field(OMSL,"closed_loop")
+  field(DOL,"$(U):DeviceTaper")
+  field(ZNAM,"OFF")
+  field(ONAM,"ON")
+  field(OSV,"MINOR")
+}
+########################################################
+record(ai,"$(U):FullOpenGap") {
+  field(DESC,"Gap Value for Full Open")
+  field(PINI,"YES")
+  field(ASG,"SYSTEM")
+  field(INP,"100.0")
+  field(PREC,"3")
+  field(EGU,"mm")
+}
+record(bi,"$(U):GlobalBusy") {
+  field(DESC,"Device Problem")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(INP,"0")
+  field(OSV,"MAJOR")
+  field(ZNAM,"Operational")
+  field(ONAM,"ID Problem")
+}
+##############################################################
+record(seq,"$(U):FullOpen") {
+  field(DESC,"Fully Open Device ")
+  field(ASG,"OPERATOR")
+  field(DOL1,"$(U):FullOpenGap NPP NMS")
+  field(LNK1,"$(U):ScanGap.VAL PP")
+}
+record(seq,"$(U):FullClose") {
+  field(DESC,"Fully Close Device ")
+  field(ASG,"OPERATOR")
+  field(DOL1,"$(U):DeviceLimit.VAL NPP NMS")
+  field(LNK1,"$(U):ScanGap.VAL PP NMS")
+}
+##############################################################
+record(calcout,"$(U):CalcDirection") {
+  field(DESC,"Determine Travel Direction")
+  field(ASG,"SYSTEM")
+  field(CALC,"(A-B)<=0")
+  field(INPA,"$(U):Gap.VAL NPP NMS")
+  field(INPB,"$(U):GapSet.VAL NPP NMS")
+  field(OUT,"$(U):MotionDirection.VAL PP NMS")
+  field(OOPT,"On Change")
+  field(DOPT,"Use CALC")
+}
+record(bi,"$(U):MotionDirection") {
+  field(DESC,"Motion Direction Status")
+  field(ASG,"SYSTEM")
+  field(ZNAM,"Closing")
+  field(ONAM,"Opening")
+}
+########################################################
+
+record(calc,"$(U):DeviceOpen") {
+  field(DESC,"Device Gap > zz mm")
+  field(SCAN,"5 second")
+  field(CALC,"A>=B?1:0")
+  field(INPA,"$(U):Gap NPP NMS")
+  field(INPB,"25.0")
+}
+record(calc,"$(U):DeviceBusy") {
+  field(DESC,"Gap < zz mm and Moving")
+  field(CALC,"A<B&&C=1?1:0")
+  field(INPA,"$(U):Gap NPP NMS")
+  field(INPB,"25.0")
+  field(INPC,"$(U):Busy  CP NMS")
+}
+########################################################
+# Device Bounds checking
+record(calc,"$(U):UpperBoundCheck") {
+  field(DESC,"Check Upper ID Bound")
+  field(CALC,"MAX(A,B)>(D+C)?1:0")
+  field(INPA,"$(U):USGap.VAL NPP NMS")
+  field(INPB,"$(U):DSGap.VAL NPP NMS")
+  field(INPC,"$(U):DeviceCreep.VAL PP NMS")
+  field(INPD,"$(U):DeviceLimit.DRVH PP NMS")
+}
+record(calc,"$(U):LowerBoundCheck") {
+  field(DESC,"Check Lower ID Bound")
+  field(CALC,"MIN(A,B)<(D-C)?1:0")
+  field(INPA,"$(U):USGap.VAL NPP NMS")
+  field(INPB,"$(U):DSGap.VAL NPP NMS")
+  field(INPC,"$(U):DeviceCreep.VAL PP NMS")
+  field(INPD,"$(U):DeviceLimit.DRVL PP NMS")
+}
+record(calc,"$(U):TaperBoundCheck") {
+  field(DESC,"Check ID Taper Bound")
+  field(CALC,"ABS(A)>(B+C)?1:0")
+  field(INPA,"$(U):TaperGap.VAL NPP NMS")
+  field(INPB,"$(U):MaxTaper.VAL NPP NMS")
+  field(INPC,"0.2")
+}
+record(ai,"$(U):OldDSAMotor") {
+  field(DESC,"Store DSA Motor")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):DSAMotor.RBV NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldDSAMotorGap") {
+  field(DESC,"Store DSA MotorGap")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):DSAMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldDSWMotor") {
+  field(DESC,"Store DSW Motor")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):DSWMotor.RBV NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldDSWMotorGap") {
+  field(DESC,"Store DSW MotorGap")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):DSWMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldUSAMotor") {
+  field(DESC,"Store USA Motor")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):USAMotor.RBV NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldUSAMotorGap") {
+  field(DESC,"Store USA MotorGap")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):USAMotorGap.VAL NPP NMS")
+  field(PREC,"3")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldUSWMotor") {
+  field(DESC,"Store USW Motor")
+  field(ASG,"SYSTEM")
+  field(DTYP,"Soft Channel")
+  field(PINI,"YES")
+  field(INP,"$(U):USWMotor.RBV NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(ai,"$(U):OldUSWMotorGap") {
+  field(DESC,"Store USW MotorGap")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(DTYP,"Soft Channel")
+  field(INP,"$(U):USWMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+#############################################
+# ID Maximum Symmetry - Read/Write 
+#    (FPGA Use only: 16-bits)
+#############################################
+record(ao,"$(U):MaximumSymm") {
+  field(DESC,"Max ID Symmetry Write")
+#	field(ASG,"SYSTEM")
+  field(DTYP,"asynInt32")
+  field(OUT,"@asyn(internalIO13,0x8000a0)")
+  field(DOL,"5000")
+  field(OMSL,"supervisory")
+  field(DRVH,"5000")
+  field(DRVL,"0")
+  field(EGU,"Encoder Counts")	
+  field(FLNK,"$(U):MaximumSymmRd.PROC PP NMS")
+}
+record(ai,"$(U):MaximumSymmRd") {
+  field(DESC,"Max ID Symmetry Rd")
+#	field(ASG,"SYSTEM")
+  field(DTYP,"asynInt32")
+  field(INP,"@asyn(internalIO13,0x8000a0)")
+  field(ASLO,"1")
+  field(AOFF,"0")
+  field(EGU,"Encoder Counts")
+  field(PINI, "YES")	
+}
+#############################################
+# ID Maximum Taper - Read/Write 
+#   (FPGA Use only: 16-bits)
+#############################################
+record(ao,"$(U):MaximumTaper") {
+  field(DESC,"Max ID Taper Write")
+#	field(ASG,"SYSTEM")
+  field(DTYP,"asynInt32")
+  field(OUT,"@asyn(internalIO14,0x8000a8)")
+  field(DOL,"4000")
+  field(OMSL,"supervisory")
+  field(DRVH,"5000")
+  field(DRVL,"0")
+  field(EGU,"Encoder Counts")	
+  field(FLNK,"$(U):MaxTaperRd.PROC PP NMS")
+}
+record(ai,"$(U):MaxTaperRd") {
+  field(DESC,"Max ID Taper Read")
+#	field(ASG,"SYSTEM")
+  field(DTYP,"asynInt32")
+  field(INP,"@asyn(internalIO14,0x8000a8)")
+  field(ASLO,"1")
+  field(AOFF,"0")
+  field(EGU,"Encoder Counts")
+  field(PINI, "YES")	
+}
+#############################################

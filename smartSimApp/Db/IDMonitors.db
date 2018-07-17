@@ -1,0 +1,544 @@
+####################################################
+# ID Taper/Skew Detection
+####################################################
+record(bi,"$(U):IDTaperWall") {
+	field(DESC,"ID Tapered Wall")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x4)")
+	field(OSV,"MINOR")
+	field(ZNAM,"Wall Taper OK")
+	field(ONAM,"ID Taper Wall")
+}
+record(bi,"$(U):IDTaperAisle") {
+	field(DESC,"ID Tapered Aisle")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x8)")
+	field(OSV,"MINOR")
+	field(ZNAM,"Aisle Taper OK")
+	field(ONAM,"ID Taper Aisle")
+}
+####################################################
+# Motor Fuse Monitors
+####################################################
+record(bi,"$(U):PSMotorFuse") {
+	field(DESC,"PS Motor Fuse")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x100)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"PS Power Bad")
+	field(ONAM,"PS Power OK")
+}
+record(bi,"$(U):DSWMotorFuse") {
+	field(DESC,"DSW Motor Fuse")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x200)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"DSW Power Bad")
+	field(ONAM,"DSW Power OK")
+}
+record(bi,"$(U):DSAMotorFuse") {
+	field(DESC,"DSA Motor Fuse")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x400)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"DSA Power Bad")
+	field(ONAM,"DSA Power OK")
+}
+record(bi,"$(U):USWMotorFuse") {
+	field(DESC,"USW Motor Fuse")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x800)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"USW Power Bad")
+	field(ONAM,"USW Power OK")
+}
+record(bi,"$(U):USAMotorFuse") {
+	field(DESC,"USA Motor Fuse")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x1000)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"USA Power Bad")
+	field(ONAM,"USA Power OK")
+}
+####################################################
+record(bi,"$(U):USAEStopState") {
+	field(DESC,"USA E-Stop button")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x100)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"E-Stop Not Active")
+	field(ONAM,"E-Stop Active")
+}
+record(bi,"$(U):DSAEStopState") {
+	field(DESC,"DSA E-Stop button")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x200)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"E-Stop Not Active")
+	field(ONAM,"E-Stop Active")
+}
+record(bi,"$(U):USWEStopState") {
+	field(DESC,"USW E-Stop button")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x400)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"E-Stop Not Active")
+	field(ONAM,"E-Stop Active")
+}
+record(bi,"$(U):DSWEStopState") {
+	field(DESC,"DSW E-Stop button")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x800)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"E-Stop Not Active")
+	field(ONAM,"E-Stop Active")
+}
+####################################################
+record(bi,"$(U):42VDCMon") {
+	field(DESC,"42 VDC Monitor")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x2000)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"42 VDC Bad")
+	field(ONAM,"42 VDC OK")
+}
+record(bi,"$(U):5VDCMon") {
+	field(DESC,"5 VDC Monitor")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x4000)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"5 VDC Bad")
+	field(ONAM,"5 VDC OK")
+}
+record(bi,"$(U):24VDCMon") {
+	field(DESC,"24 VDC Monitor")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT1) 0x800010 0x8000)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"24 VDC Bad")
+	field(ONAM,"24 VDC OK")
+}
+########################################################
+record(bi,"$(U):MotorStopMon") {
+	field(DESC,"Motor Power Monitor")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x20)")
+	field(ZSV,"MAJOR")
+	field(ZNAM,"Motor Power Bad")
+	field(ONAM,"Motor Power OK")
+}
+record(bo,"$(U):MotorStopPwr") {
+	field(DESC,"Motor Power Ctl")
+	field(DTYP,"asynUInt32Digital")
+	field(PINI,"YES")
+#	field(ASG,"SYSTEM")
+	field(DOL,"1")
+	field(OUT,"@asynMask($(PORT) 0x800020 0x20)") 
+	field(ZNAM,"Motor Power Off")
+	field(ONAM,"Motor Power On")
+}
+record(calcout,"$(U):PowerOnCalib") {
+	field(DESC,"Cal Motors After Pwr On")
+	field(CALC,"A&&B")
+	field(INPA,"$(U):MotorStopMon.VAL CP NMS")
+	field(INPB,"$(U):42VDCMon.VAL CP NMS")
+	field(OUT,"$(U):RepeatStop.PROC PP NMS")
+	field(OOPT,"Transition To Non-zero")
+}
+# This seems a bit desperate because it is. Motors keep walking off when powered on.
+record(seq,"$(U):RepeatStop") {
+        field(DESC,"Set All Device Action")
+        field(DOL1,"1")
+        field(LNK1,"$(U):StopMotors.PROC PP NMS")
+        field(DLY2, 0.05)
+        field(DOL2,"1")
+        field(LNK2,"$(U):StopMotors.PROC PP NMS")
+        field(DLY3, 0.1)
+        field(DOL3,"1")
+        field(LNK3,"$(U):StopMotors.PROC PP NMS")
+        field(DLY4, 0.15)
+        field(DOL4,"1")
+        field(LNK4,"$(U):StopMotors.PROC PP NMS")
+        field(DLY5, 0.2)
+        field(DOL5,"1")
+        field(LNK5,"$(U):StopMotors.PROC PP NMS")
+        field(DLY6, 0.25)
+        field(DOL6,"1")
+        field(LNK6,"$(U):StopMotors.PROC PP NMS")
+        field(DLY7, 0.3)
+        field(DOL7,"1")
+        field(LNK7,"$(U):StopMotors.PROC PP NMS")
+        field(DLY8, 0.4)
+        field(DOL8,"1")
+        field(LNK8,"$(U):StopMotors.PROC PP NMS")
+        field(DLY9, 0.6)
+        field(DOL9,"1")
+        field(LNK9,"$(U):StopMotors.PROC PP NMS")
+        field(DLYA, 1.0)
+        field(DOLA,"1")
+        field(LNKA,"$(U):DeviceStop.PROC PP NMS")
+}
+# Note: it was found during testing that if power is lost then restored,
+# the above calibration sometimes sets position to 0 and motors run away.
+# Commanding them to stop when the power goes out keeps this from happening.
+# It may sound redundant (they're physically stopped alreay) but it's not.
+record(calcout,"$(U):PowerOffStop") {
+	field(DESC,"Stop Motors After Pwr Off")
+	field(CALC,"!(A&&B)")
+	field(INPA,"$(U):MotorStopMon.VAL CP NMS")
+	field(INPB,"$(U):42VDCMon.VAL CP NMS")
+	field(OUT,"$(U):StopMotors.PROC PP NMS")
+	field(OOPT,"Transition To Non-zero")
+}
+########################################################
+record(bi,"$(U):USATaperOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x1)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USA Offset Add OK")
+	field(ONAM,"USA Offset Add Err")
+}
+record(bi,"$(U):USDSATaperDiffErr") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x2)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USA-DSA Diff OK")
+	field(ONAM,"USA-DSA Diff Err")
+}
+record(bi,"$(U):USDSATaperDiffPrec") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x4)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USA-DSA Prec OK")
+	field(ONAM,"USA-DSA Prec Err")
+}
+record(bi,"$(U):DSATaperOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x8)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DSA Offset Add OK")
+	field(ONAM,"DSA Offset Add Err")
+}
+########################################################
+record(bi,"$(U):DSWTaperOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x10)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DSA Offset Add OK")
+	field(ONAM,"DSA Offset Add Err")
+}
+record(bi,"$(U):USDSWTaperDiffErr") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x20)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USW-DSW Diff OK")
+	field(ONAM,"USW-DSW Diff Err")
+}
+record(bi,"$(U):USDSWTaperDiffPrec") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x40)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USW-DSW Prec OK")
+	field(ONAM,"USW-DSW Prec Err")
+}
+record(bi,"$(U):DSWTaperOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x80)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DSW Offset Add OK")
+	field(ONAM,"DSW Offset Add Err")
+}
+########################################################
+record(bi,"$(U):USASymOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x100)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USA Offset Add OK")
+	field(ONAM,"USA Offset Add Err")
+}
+record(bi,"$(U):USDSASymDiffErr") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x200)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USA-DSA Diff OK")
+	field(ONAM,"USA-DSA Diff Err")
+}
+record(bi,"$(U):USDSASymDiffPrec") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x400)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USA-DSA Prec OK")
+	field(ONAM,"USA-DSA Prec Err")
+}
+record(bi,"$(U):DSASymOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x800)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DSA Offset Add OK")
+	field(ONAM,"DSA Offset Add Err")
+}
+########################################################
+record(bi,"$(U):DSWSymOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x1000)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DSA Offset Add OK")
+	field(ONAM,"DSA Offset Add Err")
+}
+record(bi,"$(U):USDSWSymDiffErr") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x2000)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USW-DSW Diff OK")
+	field(ONAM,"USW-DSW Diff Err")
+}
+record(bi,"$(U):USDSWSymDiffPrec") {
+	field(DESC,"Enc Difference Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x4000)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"USW-DSW Prec OK")
+	field(ONAM,"USW-DSW Prec Err")
+}
+record(bi,"$(U):DSWSymOffsetErr") {
+	field(DESC,"Encoder Offset Add Err")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x008000b0 0x8000)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DSW Offset Add OK")
+	field(ONAM,"DSW Offset Add Err")
+}
+
+########################################################
+# ID Errors
+#######################################################
+record(bi,"$(U):AisleTaperErr") {
+	field(DESC,"Aisle Taper Error")
+	field(SCAN,"1 second")
+	field(DTYP,"asynUInt32Digital")
+	field(INP,"@asynMask(pio24 0x8000f8 0x1)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"Aisle Taper OK")
+	field(ONAM,"Aisle Taper Error")
+}
+record(bi,"$(U):WallTaperErr") {
+	field(DESC,"Wall Taper Error")
+	field(SCAN,"1 second")
+	field(DTYP,"asynUInt32Digital")
+	field(INP,"@asynMask(pio24 0x8000f8 0x2)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"Wall Taper OK")
+	field(ONAM,"Wall Taper Error")
+}
+record(bi,"$(U):USSymErr") {
+	field(DESC,"US Symmetry Error")
+	field(SCAN,"1 second")
+	field(DTYP,"asynUInt32Digital")
+	field(INP,"@asynMask(pio24 0x8000f8 0x4)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"US Symmetry OK")
+	field(ONAM,"US Symmetry Error")
+}
+record(bi,"$(U):DSSymErr") {
+	field(DESC,"DS Symmetry Error")
+	field(SCAN,"1 second")
+	field(DTYP,"asynUInt32Digital")
+	field(INP,"@asynMask(pio24 0x8000f8 0x8)")
+	field(OSV,"MAJOR")
+	field(ZNAM,"DS Symmetry OK")
+	field(ONAM,"DS Symmetry Error")
+}
+#######################################################
+# Used for taper limit on Aisle side in FPGA
+#######################################################
+record(ai,"$(U):AisleEncDiffLow") {
+	field(DESC,"Aisle Enc Diff Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio20,0x8000d8)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):AisleEncDiffHi.PROC PP NMS")	
+}
+record(ai,"$(U):AisleEncDiffHi") {
+	field(DESC,"Aisle Enc Diff Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio21,0x8000e0)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(FLNK,"$(U):AisleEncDiff.PROC PP NMS")	
+}
+record(calc,"$(U):AisleEncDiff") {
+	field(DESC,"Taper Asle Side")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):AisleEncDiffLow.VAL NPP NMS")
+	field(INPB,"$(U):AisleEncDiffHi.VAL NPP NMS")
+}
+#######################################################
+# Used for taper limit on Wall side in FPGA
+#######################################################
+record(ai,"$(U):WallEncDiffLow") {
+	field(DESC,"Wall Enc Diff Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio22,0x8000e8)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):WallEncDiffHi.PROC PP NMS")	
+}
+record(ai,"$(U):WallEncDiffHi") {
+	field(DESC,"Wall Enc Diff Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio23,0x8000f0)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(FLNK,"$(U):WallEncDiff.PROC PP NMS")	
+}
+record(calc,"$(U):WallEncDiff") {
+	field(DESC,"Taper Wall Side")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):WallEncDiffLow.VAL NPP NMS")
+	field(INPB,"$(U):WallEncDiffHi.VAL NPP NMS")
+}
+#######################################################
+# Used for Symmetry limit on Upstream Side in FPGA
+#######################################################
+record(ai,"$(U):USEncDiffLow") {
+	field(DESC,"US Enc Diff Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio25,0x800100)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):USEncDiffHi.PROC PP NMS")	
+}
+record(ai,"$(U):USEncDiffHi") {
+	field(DESC,"US Enc Diff Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio25,0x800108)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(FLNK,"$(U):USEncSym.PROC PP NMS")	
+}
+record(calc,"$(U):USEncSym") {
+	field(DESC,"USW Raw Enc Count")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):USEncDiffLow.VAL NPP NMS")
+	field(INPB,"$(U):USEncDiffHi.VAL NPP NMS")
+}
+#######################################################
+# Used for Symmetry limit on Downstream Side in FPGA
+#######################################################
+record(ai,"$(U):DSEncDiffLow") {
+	field(DESC,"DS Enc Diff Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio25,0x800110)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):DSEncDiffHi.PROC PP NMS")	
+}
+record(ai,"$(U):DSEncDiffHi") {
+	field(DESC,"DS Enc Diff Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(pio25,0x800118)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"counts")	
+	field(FLNK,"$(U):DSEncSym.PROC PP NMS")	
+}
+record(calc,"$(U):DSEncSym") {
+	field(DESC,"USW Raw Enc Count")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):DSEncDiffLow.VAL NPP NMS")
+	field(INPB,"$(U):DSEncDiffHi.VAL NPP NMS")
+}
+#######################################################
+record(bi,"$(U):FPGAIntlckLatchMon") {
+	field(DESC,"FPGA Encoder Interlock Latch Monitor")
+	field(DTYP,"asynUInt32Digital")
+	field(SCAN,"1 second")
+	field(INP,"@asynMask($(PORT) 0x800020 0x40)")
+	field(OSV,"MAJOR")
+	field(OSV,"NO_ALARM")
+	field(ZNAM,"Latch Low")
+	field(ONAM,"Latch High")
+}
+record(bo,"$(U):FPGAIntlckLatch") {
+	field(DESC,"FPGA Encoder Interlock Latch Ctl")
+	field(DTYP,"asynUInt32Digital")
+	field(PINI,"YES")
+#	field(ASG,"SYSTEM")
+	field(DOL,"0")
+	field(OUT,"@asynMask($(PORT) 0x800020 0x40)") 
+	field(ZNAM,"Latch Low")
+	field(ONAM,"Latch High")
+}

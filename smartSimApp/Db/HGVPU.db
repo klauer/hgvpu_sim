@@ -1,0 +1,189 @@
+ record(stringout,"$(U):Version") {
+	field(DESC,"Software Version Information")
+	field(PINI,"YES")
+	field(VAL,"1.0")
+}
+#######################################################
+
+record(ai,"$(U):EndMotFactor") {
+        field(DESC,"End to Motor Conv Factor")
+        field(ASG,"SYSTEM")
+        field(PINI,"YES")
+	field(INP,"0.76670")
+        field(PREC,"5")
+}
+record(ai,"$(U):LinMotFactor") {
+        field(DESC,"Linear to Motor Conv Factor")
+        field(ASG,"SYSTEM")
+        field(PINI,"YES")
+	field(INP,"0.76670")
+        field(PREC,"5")
+}
+record(ai,"$(U):MotEndFactor") {
+        field(DESC,"Motor to End Conv Factor")
+        field(ASG,"SYSTEM")
+        field(PINI,"YES")
+	field(INP,"1.437386")
+        field(PREC,"5")
+}
+########################################################
+record(fanout,"$(U):StartProcess") {
+        field(DESC,"Start Processing Encoders")
+	field(ASG,"SYSTEM")
+	field(SCAN,".1 second")
+ 	field(LNK1,"$(U):USWLinearEncoder.PROC")
+	field(LNK2,"$(U):USALinearEncoder.PROC")
+	field(LNK3,"$(U):DSWLinearEncoder.PROC")
+	field(LNK4,"$(U):DSALinearEncoder.PROC")
+        field(LNK5,"$(U):ProcessMotorGap.PROC")
+}
+record(fanout,"$(U):ProcessMotorGap") {
+        field(DESC,"Start Processing Motor Gaps")
+	field(ASG,"SYSTEM")
+        field(LNK1,"$(U):USWMotorGap.PROC")
+        field(LNK2,"$(U):USAMotorGap.PROC")
+        field(LNK3,"$(U):DSWMotorGap.PROC")
+        field(LNK4,"$(U):DSAMotorGap.PROC")
+        field(LNK6,"$(U):ProcessGap.PROC")
+}
+record(calc,"$(U):USWMotorGap") {
+        field(DESC,"US Wall Gap at Motor")
+        field(CALC,"D*C+E*(1.0-C)")
+#        field(CALC,"D+(796.93*(D-E)/3415.89)")
+#        field(INPA,"$(U):EncoderSelect.VAL NPP NMS")
+#        field(INPB,"$(U):USWRotaryEncoder.VAL NPP NMS")
+        field(INPC,"$(U):LinMotFactor.VAL NPP NMS")
+        field(INPD,"$(U):USWLinearEncoder.VAL NPP NMS")
+        field(INPE,"$(U):DSWLinearEncoder.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):USAMotorGap") {
+        field(DESC,"US Aisle Gap at Motor")
+        field(CALC,"D*C+E*(1.0-C)")
+#        field(CALC,"D+(796.93*(D-E)/3415.89)")
+#        field(INPA,"$(U):EncoderSelect.VAL NPP NMS")
+#        field(INPB,"$(U):USARotaryEncoder.VAL NPP NMS")
+        field(INPC,"$(U):LinMotFactor.VAL NPP NMS")
+        field(INPD,"$(U):USALinearEncoder.VAL NPP NMS")
+        field(INPE,"$(U):DSALinearEncoder.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):DSWMotorGap") {
+        field(DESC,"DS Wall Gap at Motor")
+        field(CALC,"D*C+E*(1.0-C)")
+ #       field(CALC,"D+(796.93*(D-E)/3415.89)")
+#        field(INPA,"$(U):EncoderSelect.VAL NPP NMS")
+#        field(INPB,"$(U):DSWRotaryEncoder.VAL NPP NMS")
+        field(INPC,"$(U):LinMotFactor.VAL NPP NMS")
+        field(INPD,"$(U):DSWLinearEncoder.VAL NPP NMS")
+        field(INPE,"$(U):USWLinearEncoder.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):DSAMotorGap") {
+        field(DESC,"DS Aisle Gap at Motor")
+        field(CALC,"D*C+E*(1.0-C)")
+#        field(CALC,"D-((796.93*(D-E)/3415.89))")
+#        field(INPA,"$(U):EncoderSelect.VAL NPP NMS")
+#        field(INPB,"$(U):DSARotaryEncoder.VAL NPP NMS")
+        field(INPC,"$(U):LinMotFactor.VAL NPP NMS")
+        field(INPD,"$(U):DSALinearEncoder.VAL NPP NMS")
+        field(INPE,"$(U):USALinearEncoder.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+}
+record(fanout,"$(U):ProcessGap") {
+        field(DESC,"Start Processing Gaps")
+	field(ASG,"SYSTEM")
+        field(LNK1,"$(U):USWGap")
+        field(LNK2,"$(U):DSWGap")
+        field(LNK3,"$(U):USGap")
+        field(LNK4,"$(U):DSGap")
+        field(LNK5,"$(U):Gap")
+}
+record(calc,"$(U):USWGap") {
+        field(DESC,"US Wall Encoder => End")
+        field(CALC,"A*C+B*(1.0-C)")
+        field(INPA,"$(U):USWMotorGap.VAL NPP NMS")
+        field(INPB,"$(U):DSWMotorGap.VAL NPP NMS")
+        field(INPC,"$(U):MotEndFactor.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+        field(FLNK,"$(U):USAGap")
+}
+record(calc,"$(U):USAGap") {
+        field(DESC,"US Aisle Motor => End")
+        field(CALC,"A*C+B*(1.0-C)")
+        field(INPA,"$(U):USAMotorGap.VAL NPP NMS")
+        field(INPB,"$(U):DSAMotorGap.VAL NPP NMS")
+        field(INPC,"$(U):MotEndFactor.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):DSWGap") {
+        field(DESC,"DS Wall Motor => End")
+        field(CALC,"A*C+B*(1.0-C)")
+        field(INPA,"$(U):DSWMotorGap.VAL NPP NMS")
+        field(INPB,"$(U):USWMotorGap.VAL NPP NMS")
+        field(INPC,"$(U):MotEndFactor.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+        field(FLNK,"$(U):DSAGap")
+}
+record(calc,"$(U):DSAGap") {
+        field(DESC,"DS Aisle Motor => End")
+        field(CALC,"A*C+B*(1.0-C)")
+        field(INPA,"$(U):DSAMotorGap.VAL NPP NMS")
+        field(INPB,"$(U):USAMotorGap.VAL NPP NMS")
+        field(INPC,"$(U):MotEndFactor.VAL NPP NMS")
+        field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):USGap") {
+	field(DESC,"US End ID Gap")
+	field(CALC,"(A+B)")
+	field(INPA,"$(U):USWGap.VAL NPP NMS")
+	field(INPB,"$(U):USAGap.VAL NPP NMS")
+	field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):DSGap") {
+	field(DESC,"DS End ID Gap")
+	field(CALC,"(A+B)")
+	field(INPA,"$(U):DSWGap.VAL NPP NMS")
+	field(INPB,"$(U):DSAGap.VAL NPP NMS")
+	field(PREC,"4")
+	field(EGU,"mm")
+}
+record(calc,"$(U):Gap") {
+	field(DESC,"Average ID Gap")
+	field(CALC,"(A+B)/2.0")
+	field(INPA,"$(U):USGap.VAL NPP NMS")
+	field(INPB,"$(U):DSGap.VAL NPP NMS")
+	field(PREC,"4")
+	field(EGU,"mm")
+	field(FLNK,"$(U):TaperGap")
+}
+record(calc,"$(U):TaperGap") {
+	field(DESC,"Taper ID Gap Readout")
+	field(CALC,"A-B")
+	field(INPA,"$(U):USGap.VAL NPP NMS")
+	field(INPB,"$(U):DSGap.VAL NPP NMS")
+	field(PREC,"4")
+	field(EGU,"mm")
+	field(FLNK,"$(U):GapSymmetry")
+}
+record(calc,"$(U):GapSymmetry") {
+	field(DESC,"Average Symmetry Readout")
+	field(CALC,"MAX(ABS(A-B),ABS(C-D))")
+	field(INPA,"$(U):USWGap.VAL NPP NMS")
+	field(INPB,"$(U):USAGap.VAL NPP NMS")
+	field(INPC,"$(U):DSWGap.VAL NPP NMS")
+	field(INPD,"$(U):DSAGap.VAL NPP NMS")
+	field(PREC,"4")
+	field(EGU,"mm")
+}
+########################################################
+

@@ -1,0 +1,95 @@
+###################################################################
+#This record writes over the one in NGS.db because it uses the new
+#Linear encoders as well as the old Gurley ones
+record(fanout,"$(U):StartLinEncoder") {
+	field(DESC,"Start Linear Encoder Read")
+	field(LNK1,"$(U):USWLinearEncoder PP")
+	field(LNK2,"$(U):USALinearEncoder PP")
+	field(LNK3,"$(U):DSWLinearEncoder PP")
+	field(LNK4,"$(U):DSALinearEncoder PP")
+}
+record(calc,"$(U):LinearEncoderCheck") {
+        field(DESC,"Check Linear Encoder Error")
+        field(ASG,"SYSTEM")
+        field(CALC,"A+(B<<1)+(C<<2)+(D<<3)")
+        field(INPA,"$(U):USWLinearEncCheck.VAL PP NMS")
+        field(INPB,"$(U):USALinearEncCheck.VAL PP NMS")
+        field(INPC,"$(U):DSWLinearEncCheck.VAL PP NMS")
+        field(INPD,"$(U):DSALinearEncCheck.VAL PP NMS")
+}
+#########################################################################
+#Linear Linear Encoder Checks
+
+#This only works for processing the OldxxxLinearEncoder if that
+#record is passive scan and is not processed by some other record.
+#The purpose is to find out if the encoder moved more than 1 mm in
+#less than 1 second. Since the ID cannot move this fast, this would be
+#indicative of an encoder problem.
+record(calc,"$(U):USWLinearEncCheck") {
+        field(DESC,"Check Encoder Errors")
+        field(CALC,"(E>C|E<D)|(ABS(A-B)>1)")
+        field(INPA,"$(U):OldUSWLinearEncoder.VAL NPP NMS")
+        field(INPB,"$(U):OldUSWLinearEncoder.VAL PP NMS")
+        field(INPC,"50.0")
+        field(INPD,"3.6")
+        field(INPE,"$(U):USWLinearEncoder.VAL NPP NMS")
+}
+record(ai,"$(U):OldUSWLinearEncoder") {
+        field(DESC,"Store USW Linear Encoder")
+	field(PINI,"YES")
+        field(ASG,"SYSTEM")
+        field(INP,"$(U):USWLinearEncoder.VAL NPP NMS")
+        field(PREC,"3")
+        field(EGU,"mm")
+}
+record(calc,"$(U):USALinearEncCheck") {
+        field(DESC,"Check Encoder Errors")
+        field(CALC,"(E>C|E<D)|(ABS(A-B)>1)")
+        field(INPA,"$(U):OldUSALinearEncoder.VAL NPP NMS")
+        field(INPB,"$(U):OldUSALinearEncoder.VAL PP NMS")
+        field(INPC,"50.0")
+        field(INPD,"3.6")
+        field(INPE,"$(U):USALinearEncoder.VAL NPP NMS")
+}
+record(ai,"$(U):OldUSALinearEncoder") {
+        field(DESC,"Store USA Linear Encoder")
+	field(PINI,"YES")
+        field(ASG,"SYSTEM")
+        field(INP,"$(U):USALinearEncoder.VAL NPP NMS")
+        field(PREC,"3")
+        field(EGU,"mm")
+}
+record(calc,"$(U):DSWLinearEncCheck") {
+        field(DESC,"Check Encoder Errors")
+        field(CALC,"(E>C|E<D)|(ABS(A-B)>1)")
+        field(INPA,"$(U):OldDSWLinearEncoder.VAL NPP NMS")
+        field(INPB,"$(U):OldDSWLinearEncoder.VAL PP NMS")
+        field(INPC,"50.0")
+        field(INPD,"3.6")
+        field(INPE,"$(U):DSWLinearEncoder.VAL NPP NMS")
+}
+record(ai,"$(U):OldDSWLinearEncoder") {
+        field(DESC,"Store DSW Linear Encoder")
+	field(PINI,"YES")
+        field(ASG,"SYSTEM")
+        field(INP,"$(U):DSWLinearEncoder.VAL NPP NMS")
+        field(PREC,"3")
+        field(EGU,"mm")
+}
+record(calc,"$(U):DSALinearEncCheck") {
+        field(DESC,"Check Encoder Errors")
+        field(CALC,"(E>C|E<D)|(ABS(A-B)>1)")
+        field(INPA,"$(U):OldDSALinearEncoder.VAL NPP NMS")
+        field(INPB,"$(U):OldDSALinearEncoder.VAL PP NMS")
+        field(INPC,"50.0")
+        field(INPD,"3.6")
+        field(INPE,"$(U):DSALinearEncoder.VAL NPP NMS")
+}
+record(ai,"$(U):OldDSALinearEncoder") {
+        field(DESC,"Store DSA Linear Encoder")
+	field(PINI,"YES")
+        field(ASG,"SYSTEM")
+        field(INP,"$(U):DSALinearEncoder.VAL NPP NMS")
+        field(PREC,"3")
+        field(EGU,"mm")
+}

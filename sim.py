@@ -1,3 +1,13 @@
+'''
+Quick simulator of the hgvpu class 5 SmartMotors to aid in debugging and IOC
+development.
+
+Usage:
+ $ python3 sim.py
+
+Configure asyn on the IOC to connect to localhost, port 7001
+'''
+
 import asyncio
 import functools
 import time
@@ -289,23 +299,30 @@ class SimState:
         {command}({PARAM}):{axis_number}
         {command}:{axis_number}={PARAM}
         '''
+        # Stash the line for display later
         raw_line = line
 
         if b'=' in line:
+            # {command}:{axis_number}={PARAM}
             line, param = line.split(b'=')
         else:
             param = None
 
         if b':' in line:
+            # {command}:{axis_number}={PARAM}
             line, canbus_target = line.split(b':', 1)
             axis = int(canbus_target)
         elif line[0] in self.addresses:
+            # {axis_byte}{command}({PARAM})
             axis = self.addresses[line[0]]
             line = line[1:]
         else:
+            # implicit axis 1
+            # {command}({PARAM})
             axis = 1
 
         if line.endswith(b')') and b'(' in line:
+            # {command}({PARAM})
             line, paren_param = line.split(b'(')
             paren_param = paren_param.strip(b')')
             if param is None:
@@ -316,6 +333,7 @@ class SimState:
         line = line.decode('ascii')
         if param is not None:
             param = param.decode('ascii')
+
         print('<- {} / Axis {} Command {!r} Parameter: {}'
               ''.format(raw_line, axis, line, param), end=' | ')
         return await self.axis_command(axis, line, param)

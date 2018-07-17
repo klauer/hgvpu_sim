@@ -20,9 +20,11 @@ smartSim_DBD += motorSupport.dbd
 smartSim_DBD += devSmartMotorAsynSupport.dbd
 smartSim_DBD += drvAsynIPPort.dbd
 smartSim_DBD += asyn.dbd
+smartSim_DBD += calcSupport.dbd
+smartSim_DBD += busySupport.dbd
 
 # Add all the support libraries needed by this IOC
-smartSim_LIBS += motor SmartMotorAsyn asyn
+smartSim_LIBS += motor SmartMotorAsyn asyn calc busy
 
 # smartSim_registerRecordDeviceDriver.cpp derives from smartSim.dbd
 smartSim_SRCS += smartSim_registerRecordDeviceDriver.cpp

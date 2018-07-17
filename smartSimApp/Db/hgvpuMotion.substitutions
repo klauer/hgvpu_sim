@@ -1,3 +1,9 @@
+file HGVPU.db
+{
+pattern { U      }
+        { "$(U)" }
+}
+
 file HGVPU_masterMotorStatus.db
 {
 pattern { AXIS  , PORT, ADDR }
@@ -27,3 +33,52 @@ pattern { P      , M    , PORT, ADDR }
         { "$(U):", "DSA", S7  , 2    }
         { "$(U):", "USA", S7  , 3    }
 }
+
+file IDcommon_NewPower.db
+{
+pattern { DH , DL  , BL   }
+        { 120, 7.18, 7.19 }
+}
+
+file IDmotion.db
+{
+pattern { PORT   , S   }
+        { "idmon", 5.0 }
+}
+
+file IDMonitors.db
+{
+pattern { PORT   , PORT1      }
+        { "idmon", "monitors" }
+}
+
+file IDerrors.db
+{
+pattern { U      }
+        { "$(U)" }
+}
+
+file ID_FPGArev.db
+{
+pattern { U      }
+        { "$(U)" }
+}
+
+file FagorEncoders.db
+{
+pattern { U      }
+        { "$(U)" }
+}
+
+file tews_LinearSSI.db
+{
+pattern { PORT    , USW_OFF, USA_OFF, DSW_OFF, DSA_OFF, USG_OFF    , DSG_OFF    }
+        { "LinEnc", 88.4245, 86.9381, 86.9954, 87.7675, -3542.72525, -4273.2550 }
+}
+
+file asynRecord.db
+{
+pattern { P          , R    , PORT, ADDR, IMAX, OMAX }
+        { "$(U):ASYN", "HGU", S7  , 0   , 0   , 0    }
+}
+

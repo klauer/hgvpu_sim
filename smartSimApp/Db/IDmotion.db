@@ -1,0 +1,431 @@
+record(bo,"$(U):MotorPowerOn") {
+  field(DESC,"Motor Power Enable")
+  field(PINI,"YES")
+  field(ASG,"SYSTEM")
+  field(DTYP,"asynUInt32Digital")
+  field(OUT,"@asynMask($(PORT) 0x800020 0x32)")
+  field(ZNAM,"Motor Disabled")
+  field(ONAM,"Motor Enabled")
+  field(ZSV,"MAJOR")
+  field(FLNK,"$(U):MotorPowerRdbk.PROC PP NMS")
+}
+record(bi,"$(U):MotorPowerRdbk") {
+  field(DESC,"Limit Lockout Readback")
+  field(DTYP,"asynUInt32Digital")
+  field(SCAN,"1 second")
+  field(INP,"@asynMask($(PORT) 0x800020 0x32)")
+  field(OSV,"MINOR")
+  field(ZNAM,"Motor Disabled")
+  field(ONAM,"Motor Enabled")
+}
+record(calc,"$(U):DSMotorSet") {
+  field(DESC,"Downsteam Motor from GapSet")
+  field(CALC,"0.5*(A*C+B*(1.0-C))")
+  field(INPA,"$(U):DSGapSet.VAL NPP NMS")
+  field(INPB,"$(U):USGapSet.VAL NPP NMS")
+  field(INPC,"$(U):EndMotFactor.VAL NPP NMS")
+  field(EGU,"mm")
+  field(PREC,"4")
+}
+record(calc,"$(U):USMotorSet") {
+  field(DESC,"Upstream Motor from GapSet")
+  field(FLNK,"$(U):DSMotorSet")
+  field(CALC,"0.5*(A*C+B*(1.0-C))")
+  field(INPA,"$(U):USGapSet.VAL NPP NMS")
+  field(INPB,"$(U):DSGapSet.VAL NPP NMS")
+  field(INPC,"$(U):EndMotFactor.VAL NPP NMS")
+  field(EGU,"mm")
+  field(PREC,"4")
+}
+record(seq,"$(U):ProcessToMove") {
+  field(DESC,"Start Calculating Moves")
+  field(ASG,"SYSTEM")
+  field(SDIS,"$(U):GlobalBusy.VAL NPP NMS")
+  field(DOL1,"$(U):MotorsMoving.VAL CP NMS")
+  field(DOL2,"1")
+  field(DLY2,"0.01")
+  field(LNK2,"$(U):AmountToMove.PROC PP")
+}
+record(calcout,"$(U):AmountToMove") {
+  field(DESC,"Determine whether to Move")
+  field(ASG,"SYSTEM")
+  field(SDIS,"$(U):GlobalBusy.VAL NPP NMS")
+  field(CALC,"A&(!B)")
+  field(INPA,"$(U):DeviceActive.VAL CP NMS")
+  field(INPB,"$(U):MotorsMoving.VAL NPP NMS")
+  field(OUT,"$(U):USWAmountToMove.PROC PP NMS")
+  field(OOPT,"Transition To Non-zero")
+  field(DOPT,"Use CALC")
+}
+record(calcout,"$(U):USWAmountToMove") {
+  field(DESC,"Calculate USW Amount to Move")
+  field(ASG,"SYSTEM")
+  field(FLNK, "$(U):USAAmountToMove")
+  field(CALC,"(K<=L&I<J)?0:ABS(A)>E?B+F*A:B+A")
+  field(INPA,"$(U):USWMotAmountToMove.VAL PP NMS")
+  field(INPB,"$(U):USWMotor.RBV NPP NMS")
+  field(INPE,"0.02")
+  field(INPF,"0.9")
+  field(INPI,"$(U):GapSymmetry.VAL NPP NMS")
+  field(INPJ,"$(U):NormalSymmetry.VAL NPP NMS")
+  field(INPK,"$(U):USGapAmountToMove.VAL PP NMS")
+  field(INPL,"$(U):PositionAccuracy.VAL NPP NMS")
+  field(OUT,"$(U):USWMotor.VAL PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calc,"$(U):USWMotAmountToMove") {
+  field(DESC,"USW Gap Left to Move")
+  field(CALC,"A-B")
+  field(INPA,"$(U):USMotorSet.VAL NPP NMS")
+  field(INPB,"$(U):USWMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calcout,"$(U):USAAmountToMove") {
+  field(DESC,"Calculate USA Amount to Move")
+  field(ASG,"SYSTEM")
+  field(FLNK, "$(U):DSWAmountToMove")
+  field(CALC,"(K<=L&I<J)?0:ABS(A)>E?B+F*A:B+A")
+  field(INPA,"$(U):USAMotAmountToMove.VAL PP NMS")
+  field(INPB,"$(U):USAMotor.RBV NPP NMS")
+  field(INPE,"0.02")
+  field(INPF,"0.9")
+  field(INPI,"$(U):GapSymmetry.VAL NPP NMS")
+  field(INPJ,"$(U):NormalSymmetry.VAL NPP NMS")
+  field(INPK,"$(U):USGapAmountToMove.VAL NPP NMS")
+  field(INPL,"$(U):PositionAccuracy.VAL NPP NMS")
+  field(OUT,"$(U):USAMotor.VAL PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calc,"$(U):USAMotAmountToMove") {
+  field(DESC,"USA Gap Left to Move")
+  field(CALC,"A-B")
+  field(INPA,"$(U):USMotorSet.VAL NPP NMS")
+  field(INPB,"$(U):USAMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calc,"$(U):USGapAmountToMove") {
+  field(DESC,"Upstream Gap Left to Move")
+  field(CALC,"ABS(A-B)")
+  field(INPA,"$(U):USGapSet.VAL NPP NMS")
+  field(INPB,"$(U):USGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calcout,"$(U):DSWAmountToMove") {
+  field(DESC,"Calculate DSW Amount to Move")
+  field(ASG,"SYSTEM")
+  field(CALC,"(K<=L&I<J)?0:ABS(A)>E?B+F*A:B+A")
+  field(INPA,"$(U):DSWMotAmountToMove.VAL PP NMS")
+  field(INPB,"$(U):DSWMotor.RBV NPP NMS")
+  field(INPE,"0.02")
+  field(INPF,"0.9")
+  field(INPI,"$(U):GapSymmetry.VAL NPP NMS")
+  field(INPJ,"$(U):NormalSymmetry.VAL NPP NMS")
+  field(INPK,"$(U):DSGapAmountToMove.VAL PP NMS")
+  field(INPL,"$(U):PositionAccuracy.VAL NPP NMS")
+  field(OUT,"$(U):DSWMotor.VAL PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+  field(PREC,"4")
+  field(EGU,"mm")
+  field(FLNK, "$(U):DSAAmountToMove")
+}
+record(calc,"$(U):DSWMotAmountToMove") {
+  field(DESC,"DSW Gap Left to Move")
+  field(CALC,"A-B")
+  field(INPA,"$(U):DSMotorSet.VAL NPP NMS")
+  field(INPB,"$(U):DSWMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calcout,"$(U):DSAAmountToMove") {
+  field(DESC,"Calculate DSA Amount to Move")
+  field(ASG,"SYSTEM")
+  field(CALC,"(K<=L&I<J)?0:ABS(A)>E?B+F*A:B+A")
+  field(INPA,"$(U):DSAMotAmountToMove.VAL PP NMS")
+  field(INPB,"$(U):DSAMotor.RBV NPP NMS")
+  field(INPE,"0.02")
+  field(INPF,"0.9")
+  field(INPI,"$(U):GapSymmetry.VAL NPP NMS")
+  field(INPJ,"$(U):NormalSymmetry.VAL NPP NMS")
+  field(INPK,"$(U):DSGapAmountToMove.VAL NPP NMS")
+  field(INPL,"$(U):PositionAccuracy.VAL NPP NMS")
+  field(OUT,"$(U):DSAMotor.VAL PP NMS")
+  field(OOPT,"When Non-zero")
+  field(DOPT,"Use CALC")
+  field(PREC,"4")
+  field(EGU,"mm")
+  field(FLNK,"$(U):GapMotor:Trig")
+}
+record(calc,"$(U):DSAMotAmountToMove") {
+  field(DESC,"DSA Gap Left to Move")
+  field(CALC,"A-B")
+  field(INPA,"$(U):DSMotorSet.VAL NPP NMS")
+  field(INPB,"$(U):DSAMotorGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+record(calc,"$(U):DSGapAmountToMove") {
+  field(DESC,"Downstream Gap Left to Move")
+  field(CALC,"ABS(A-B)")
+  field(INPA,"$(U):DSGapSet.VAL NPP NMS")
+  field(INPB,"$(U):DSGap.VAL NPP NMS")
+  field(PREC,"4")
+  field(EGU,"mm")
+}
+#######################################################
+
+record(calcout,"$(U):DestinationCheck") {
+  field(DESC,"Check Destination Reached")
+  field(ASG,"SYSTEM")
+  field(CALC,"A||B||C||D")
+  field(INPA,"$(U):USWAmountToMove.VAL CP NMS")
+  field(INPB,"$(U):USAAmountToMove.VAL CP NMS")
+  field(INPC,"$(U):DSWAmountToMove.VAL CP NMS")
+  field(INPD,"$(U):DSAAmountToMove.VAL CP NMS")
+  field(OUT,"$(U):DeviceAtDestination.PROC PP NMS")
+  field(OOPT,"When Zero")
+  field(DOPT,"Use CALC")
+  field(MDEL,"-1")
+}
+record(seq,"$(U):DeviceAtDestination") {
+  field(DESC,"Device at Destination")
+  field(DOL1,"0")
+  field(LNK1,"$(U):DeviceActive.VAL PP NMS")
+  field(DOL2,"1")
+  field(LNK2,"$(U):StopMotors.PROC PP NMS")
+  field(DOL3,"1")
+  field(LNK3,"$(U):CalibrateMotors.PROC PP NMS")
+  field(DOL4,"1")
+  field(LNK4,"$(U):DeviceDestMsg.PROC PP NMS")
+  field(DOL5,"$(U):GapSet.VAL")
+  field(LNK5,"$(U):ActiveGap.VAL PP NMS")
+}
+record(scalcout,"$(U):DeviceDestMsg") {
+  field(DESC,"Generates messages")
+  field(CALC,"AA")
+  field(AA,"Device At Destination")
+  field(OUT,"$(U):Message1.VAL PP NMS")
+  field(OOPT,"Every Time")
+}
+########################################################
+record(dfanout,"$(U):Step") {
+  field(DESC,"Open ID in 20 micron steps")
+  field(ASG,"SYSTEM")
+  field(DOL,"1")
+  field(OUTA,"$(U):USWMotor.TWF PP")
+  field(OUTB,"$(U):USAMotor.TWF PP")
+  field(OUTC,"$(U):DSWMotor.TWF PP")
+  field(OUTD,"$(U):DSAMotor.TWF PP")
+}
+########################################################
+
+record(calc,"$(U):MotorsMoving") {
+  field(DESC,"Motors Moving")
+  field(CALC,"!(A&&B&&C&&D)")
+  field(INPA,"$(U):USWMotor.DMOV CP NMS")
+  field(INPB,"$(U):USAMotor.DMOV CP NMS")
+  field(INPC,"$(U):DSWMotor.DMOV CP NMS")
+  field(INPD,"$(U):DSAMotor.DMOV CP NMS")
+}
+#record(bi,"$(U):MotorsMoving") {
+#        field(DESC,"Motors Moving")
+#        field(INP,"$(U):IDMovingStat.VAL NPP NMS")
+#        field(OSV,"MINOR")
+#        field(ZNAM,"Motors Stopped")
+#        field(ONAM,"Motors Moving")
+#}
+record(dfanout,"$(U):StopMotors") {
+  field(DESC,"STOP all Motors")
+  field(ASG,"SYSTEM")
+  field(DOL,"1")
+  field(OUTA,"$(U):USWMotor.STOP PP")
+  field(OUTB,"$(U):USAMotor.STOP PP")
+  field(OUTC,"$(U):DSWMotor.STOP PP")
+  field(OUTD,"$(U):DSAMotor.STOP PP")
+  field(OUTE,"$(U):GapMotor.STOP PP")
+}
+record(ao,"$(U):MotorSpeed") {
+  field(DESC,"Set Motors Speed")
+  field(ASG,"SYSTEM")
+  field(PINI,"YES")
+  field(DOL,"$(S)")
+  field(DRVL,"0.1")
+  field(DRVH,"22.0")
+  field(OUT,"$(U):SetMotorSpeed PP")
+  field(PREC,"3")
+}
+record(dfanout,"$(U):SetMotorSpeed") {
+  field(DESC,"Set all Motors Speed")
+  field(DOL,"$(U):MotorSpeed.VAL")
+  field(OUTA,"$(U):USWMotor.S PP")
+  field(OUTB,"$(U):USAMotor.S PP")
+  field(OUTC,"$(U):DSWMotor.S PP")
+  field(OUTD,"$(U):DSAMotor.S PP")
+}
+record(bo,"$(U):MotorsSet") {
+  field(DESC,"Set Motor")
+  field(ASG,"SYSTEM")
+  field(OUT,"$(U):SetMotors PP") 
+  field(ZNAM,"Use")
+  field(ONAM,"Set")
+}
+record(dfanout,"$(U):SetMotors") {
+  field(DESC,"Set all Motors")
+  field(DOL,"$(U):SetMotors.VAL")
+  field(OUTA,"$(U):USWMotor.SET PP")
+  field(OUTB,"$(U):USAMotor.SET PP")
+  field(OUTC,"$(U):DSWMotor.SET PP")
+  field(OUTD,"$(U):DSAMotor.SET PP")
+}
+record(mbbo,"$(U):MotorsSPMG") {
+  field(DESC,"Set Motor SPMG")
+  field(ASG,"SYSTEM")
+  field(OUT,"$(U):SetMotorsSPMG PP") 
+  field(ZRST,"Stop")
+  field(ZRVL,"0")
+  field(ONST,"Pause")
+  field(ONVL,"1")
+  field(TWST,"Move")
+  field(TWVL,"2")
+  field(THST,"Go")
+  field(THVL,"3")
+  field(NOBT,"4")
+}
+record(dfanout,"$(U):SetMotorsSPMG") {
+  field(DESC,"Set all Motors SPMG")
+  field(DOL,"$(U):SetMotorsSPMG.VAL")
+  field(OUTA,"$(U):USWMotor.SPMG PP")
+  field(OUTB,"$(U):USAMotor.SPMG PP")
+  field(OUTC,"$(U):DSWMotor.SPMG PP")
+  field(OUTD,"$(U):DSAMotor.SPMG PP")
+}
+record(ao,"$(U):MotorsGap") {
+  field(DESC,"Set Motors Gap")
+  field(ASG,"SYSTEM")
+  field(OUT,"$(U):SetMotorsGap PP")
+  field(PREC,"3") 
+}
+record(dfanout,"$(U):SetMotorsGap") {
+  field(DESC,"Set All Motors to Move")
+  field(DOL,"$(U):MotorsGap.VAL")
+  field(OUTA,"$(U):USWMotor.VAL PP")
+  field(OUTB,"$(U):USAMotor.VAL PP")
+  field(OUTC,"$(U):DSWMotor.VAL PP")
+  field(OUTD,"$(U):DSAMotor.VAL PP")
+}
+record(seq,"$(U):CalibrateMotors") {
+  field(DESC,"Calibrate Motors <= End")
+  field(ASG,"SYSTEM")
+  field(DOL1,"0")
+  field(LNK1,"$(U):MotorsSPMG.VAL PP NMS")
+  field(DLY2,"0.1")
+  field(DOL2,"1")
+  field(LNK2,"$(U):MotorsSet.VAL PP NMS")
+  field(DLY3,"0.1")
+  field(DOL3,"$(U):USWMotorGap.VAL NPP NMS")
+  field(LNK3,"$(U):USWMotor.VAL PP NMS")
+  field(DOL4,"$(U):USAMotorGap.VAL NPP NMS")
+  field(LNK4,"$(U):USAMotor.VAL PP NMS")
+  field(DOL5,"$(U):DSWMotorGap.VAL NPP NMS")
+  field(LNK5,"$(U):DSWMotor.VAL PP NMS")
+  field(DOL6,"$(U):DSAMotorGap.VAL NPP NMS")
+  field(LNK6,"$(U):DSAMotor.VAL PP NMS")
+  field(DLY7,"0.1")
+  field(DOL7,"3")
+  field(LNK7,"$(U):MotorsSPMG.VAL PP NMS")
+  field(DLY8,"0.1")
+  field(DOL8,"0")
+  field(LNK8,"$(U):MotorsSPMG.VAL PP NMS")
+  field(DLY9,"0.1")
+  field(DOL9,"0")
+  field(LNK9,"$(U):MotorsSet.VAL PP NMS")
+  field(DLYA,"0.1")
+  field(DOLA,"3")
+  field(LNKA,"$(U):MotorsSPMG.VAL PP NMS")
+#	field(DOL1,"1")
+#	field(LNK1,"$(U):MotorsSet.VAL PP NMS")
+#	field(DLY2,"0.05")
+#	field(DOL2,"$(U):USWMotorGap.VAL NPP NMS")
+#	field(LNK2,"$(U):USWMotor.VAL PP NMS")
+#	field(DOL3,"$(U):USAMotorGap.VAL NPP NMS")
+#	field(LNK3,"$(U):USAMotor.VAL PP NMS")
+#	field(DOL4,"$(U):DSWMotorGap.VAL NPP NMS")
+#	field(LNK4,"$(U):DSWMotor.VAL PP NMS")
+#	field(DOL5,"$(U):DSAMotorGap.VAL NPP NMS")
+#	field(LNK5,"$(U):DSAMotor.VAL PP NMS")
+#	field(DLY7,"0.05")
+#	field(DOL7,"0")
+#	field(LNK7,"$(U):MotorsSet.VAL PP NMS")
+}
+########################################################
+# Added these records to provide active feedback when not 
+# moving. This will try to hold the device position to
+# within some deadband This has not been tested
+#record(ao,"$(U):ActiveDeadband") {
+#	field(DESC,"ID Gap Deadband")
+#	field(ASG,"$(U)_USER")
+#	field(PINI,"YES")
+#	field(DOL,"0.2")
+#	field(OMSL,"closed_loop")
+#	field(EGU,"microns")
+#	field(DRVH,"1000")
+#	field(DRVL,"0.2")
+#	field(PREC,"3")
+#}
+#record(calcout,"$(U):ActiveDeadCheck") {
+#	field(DESC,"ID Positioning Accuracy")
+#        field(CALC,"(B<A)||(A<0.2)?0:1")
+#        field(INPA,"$(U):DeadbandGap.VAL CP NMS")
+#        field(INPB,"$(U):ActiveDeadband.VAL CP NMS")
+#        field(OUT,"$(U):ResetActiveDead.PROC PP NMS")
+#        field(OOPT,"When Zero")
+#        field(DOPT,"Use CALC")
+#        field(PREC,"3")
+#}
+#record(seq,"$(U):ResetActiveDead") {
+#	field(DESC,"Fully Open Device ")
+#	field(ASG,"OPERATOR")
+#	field(DOL1,"0.2")
+#	field(LNK1,"$(U):ActiveDeadband.VAL PP NMS")
+#}
+#record(ai,"$(U):ActiveGap") {
+#	field(DESC,"Active Feedback Gap")
+#	field(PINI,"YES")
+#	field(ASG,"$(U)_USER")
+#	field(INP,"100")
+#	field(PREC,"3")
+#	field(EGU,"mm")
+#	field(HOPR,"120")
+#	field(LOPR,"7.19")
+#}
+#record(calcout,"$(U):HoldActivePos") {
+#	field(DESC,"Hold ID Position")
+#        field(SDIS,"$(U):ActiveControl.VAL NPP NMS")
+#        field(CALC,"D=0?(A<C-B)||(A>C+B)?1:0:0")
+#        field(INPA,"$(U):ActiveGap.VAL NPP NMS")
+#        field(INPB,"$(U):ActiveDeadband.VAL NPP NMS")
+#        field(INPC,"$(U):Gap.VAL NPP NMS")
+#        field(INPD,"$(U):Busy.VAL NPP NMS")
+#        field(OUT,"$(U):Start.PROC PP NMS")
+#        field(OOPT,"When Non-zero")
+#       field(DOPT,"Use CALC")
+#        field(PREC,"3")
+#}
+#record(bi,"$(U):ActiveControl") {
+#	field(DESC,"Hold Pos Ctl")
+#	field(ASG,"SYSTEM")
+#	field(PINI,"YES")
+#	field(INP,"1")
+#	field(OSV,"MINOR")
+#	field(ZNAM,"Active Pos On")
+#	field(ONAM,"Active Pos Off")
+#}

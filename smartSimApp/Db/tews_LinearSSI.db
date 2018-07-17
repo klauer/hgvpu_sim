@@ -1,0 +1,388 @@
+record(ai,"$(U):USALinearEncoder") {
+	field(DESC,"US Aisle Fagor Encoder")
+#	field(ASG,"SYSTEM")
+	field(SCAN,".1 second")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn($(PORT),0)")
+	field(ASLO,"-0.0001")
+	field(AOFF,"$(USA_OFF)")
+	field(PREC,"4")
+	field(EGU,"mm")	
+}
+record(ai,"$(U):USWLinearEncoder") {
+	field(DESC,"US Wall Fagor Encoder")
+#	field(ASG,"SYSTEM")
+	field(SCAN,".1 second")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn($(PORT),1)")
+	field(ASLO,"-0.0001")
+	field(AOFF,"$(USW_OFF)")
+	field(PREC,"4")
+	field(EGU,"mm")	
+}
+record(ai,"$(U):DSWLinearEncoder") {
+	field(DESC,"DS Wall Fagor Encoder")
+#	field(ASG,"SYSTEM")
+	field(SCAN,".1 second")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn($(PORT),2)")
+	field(ASLO,"-0.0001")
+	field(AOFF,"$(DSW_OFF)")
+	field(PREC,"4")
+	field(EGU,"mm")	
+}
+record(ai,"$(U):DSALinearEncoder") {
+	field(DESC,"DS Aisle Fagor Encoder")
+#	field(ASG,"SYSTEM")
+	field(SCAN,".1 second")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn($(PORT),4)")
+	field(ASLO,"-0.0001")
+	field(AOFF,"$(DSA_OFF)")
+	field(PREC,"4")
+	field(EGU,"mm")	
+}
+
+record(ai,"$(U):USGapEncoder_RAW") {
+    field(DESC,"US Gap Amosin Encoder raw counts")
+    field(SCAN,".1 second")
+    field(DTYP,"asynInt32")
+    field(INP,"@asyn($(PORT),5)")
+    field(PREC,"4")
+    field(EGU,"cnt")
+}
+record(calc,"$(U):USGapEncoder") {
+    field(DESC,"US Gap Amosin Encoder Position")
+    field(INPA,"0.00025")
+    field(INPB,"$(U):USGapEncoder_RAW CP MS")
+    field(INPC,"$(USG_OFF)")
+    field(CALC, "A*(B>>2)+C")
+    field(PREC,"4")
+    field(EGU,"mm")
+}
+record(calc,"$(U):USGapEncoder_Err") {
+    field(DESC,"US Gap Amosin Encoder Error Bit")
+    field(INPA,"$(U):USGapEncoder_RAW CP MS")
+    field(CALC, "A&2")
+}
+record(ai,"$(U):DSGapEncoder_RAW") {
+    field(DESC,"DS Gap Amosin Encoder raw counts")
+    field(SCAN,".1 second")
+    field(DTYP,"asynInt32")
+    field(INP,"@asyn($(PORT),6)")
+    field(PREC,"4")
+    field(EGU,"cnt")
+}
+record(calc,"$(U):DSGapEncoder") {
+    field(DESC,"DS Gap Amosin Encoder Position")
+    field(INPA,"0.00025")
+    field(INPB,"$(U):DSGapEncoder_RAW CP MS")
+    field(INPC,"$(DSG_OFF)")
+    field(CALC, "A*(B>>2)+C")
+    field(PREC,"4")
+    field(EGU,"mm")
+}
+record(calc,"$(U):DSGapEncoder_Err") {
+    field(DESC,"DS Gap Amosin Encoder Error Bit")
+    field(INPA,"$(U):DSGapEncoder_RAW CP MS")
+    field(CALC, "A&2")
+}
+
+#############################################
+# Find the maximum encoder raw value and set the
+# encoder offsets for the FPGA accordingly
+# These should always be positive numbers
+#############################################
+record(bi,"$(U):CalcFPGAEncOff") {
+	field(DESC,"Set FPGA Enc Offsets")
+	field(INP,"0")
+	field(ONAM,"Get Encoder Offsets")
+	field(FLNK,"$(U):ClrEncOff.PROC PP NMS")
+}
+record(seq,"$(U):ClrEncOff") {
+	field(DESC,"Calc RAW Enc Off")
+	field(DOL1,"0")
+	field(DLY1,"0.1")
+	field(LNK1,"$(U):USWLinEncOffset.VAL PP NMS")
+	field(DLY2,"0.1")
+	field(DOL2,"0")
+	field(LNK2,"$(U):USALinEncOffset.VAL PP NMS")
+	field(DOL3,"0")
+	field(DLY3,"0.1")
+	field(LNK3,"$(U):DSWLinEncOffset.VAL PP NMS")
+	field(DOL4,"0")
+	field(DLY4,"0.1")
+	field(LNK4,"$(U):DSALinEncOffset.VAL PP NMS")
+	field(DOL5,"0")
+	field(DLY5,"0.1")
+	field(LNK5,"$(U):MaxRawEnc.PROC PP NMS")
+}
+record(calc,"$(U):MaxRawEnc") {
+	field(DESC,"Maximum Raw Encoder Cnt")
+        field(CALC,"MAX(A,B,C,D)")
+        field(INPA,"$(U):USWLinEncRaw.VAL PP NMS")
+        field(INPB,"$(U):USALinEncRaw.VAL PP NMS")
+        field(INPC,"$(U):DSWLinEncRaw.VAL PP NMS")
+        field(INPD,"$(U):DSALinEncRaw.VAL PP NMS")
+	field(EGU,"Enc Counts")
+	field(FLNK,"$(U):SetUSWEncOff.PROC PP NMS")
+}
+record(calcout,"$(U):SetUSWEncOff") {
+        field(DESC,"Set USW Encoder Offset")
+	field(ASG,"SYSTEM")
+        field(CALC,"A-B")
+        field(INPA,"$(U):MaxRawEnc.VAL NPP NMS")
+        field(INPB,"$(U):USWLinEncRaw.VAL NPP NMS")
+        field(OUT,"$(U):USWLinEncOffset.VAL PP NMS")
+        field(OOPT,"Every Time")
+	field(FLNK,"$(U):SetUSAEncOff.PROC PP NMS")
+}
+record(calcout,"$(U):SetUSAEncOff") {
+        field(DESC,"Set USA Encoder Offset")
+	field(ASG,"SYSTEM")
+        field(CALC,"A-B")
+        field(INPA,"$(U):MaxRawEnc.VAL NPP NMS")
+        field(INPB,"$(U):USALinEncRaw.VAL NPP NMS")
+        field(OUT,"$(U):USALinEncOffset.VAL PP NMS")
+        field(OOPT,"Every Time")
+	field(FLNK,"$(U):SetDSWEncOff.PROC PP NMS")
+}
+record(calcout,"$(U):SetDSWEncOff") {
+        field(DESC,"Set DSW Encoder Offset")
+	field(ASG,"SYSTEM")
+        field(CALC,"A-B")
+        field(INPA,"$(U):MaxRawEnc.VAL NPP NMS")
+        field(INPB,"$(U):DSWLinEncRaw.VAL NPP NMS")
+        field(OUT,"$(U):DSWLinEncOffset.VAL PP NMS")
+        field(OOPT,"Every Time")
+	field(FLNK,"$(U):SetDSAEncOff.PROC PP NMS")
+}
+record(calcout,"$(U):SetDSAEncOff") {
+        field(DESC,"Set DSA Encoder Offset")
+	field(ASG,"SYSTEM")
+        field(CALC,"A-B")
+        field(INPA,"$(U):MaxRawEnc.VAL NPP NMS")
+        field(INPB,"$(U):DSALinEncRaw.VAL NPP NMS")
+        field(OUT,"$(U):DSALinEncOffset.VAL PP NMS")
+        field(OOPT,"Every Time")
+}
+
+#############################################
+# Encoder Offsets - Read/Write
+#############################################
+record(ao,"$(U):USWLinEncOffset") {
+	field(DESC,"US Wall Enc Offset Write")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(OUT,"@asyn(internalIO9,0x800080)")
+	field(DOL,"0")
+	field(OMSL,"supervisory")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):USWLinEncoderOff.PROC PP NMS")
+}
+record(ai,"$(U):USWLinEncOff") {
+	field(DESC,"US Wall Enc Offset Rd")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO9,0x800080)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(EGU,"mm")	
+}
+record(ao,"$(U):DSALinEncOffset") {
+	field(DESC,"DS Aisle Enc Offset Write")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(OUT,"@asyn(internalIO10,0x800088)")
+	field(DOL,"0")
+	field(OMSL,"supervisory")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):DSALinEncoderOff.PROC PP NMS")
+}
+record(ai,"$(U):DSALinEncOff") {
+	field(DESC,"DS Aisle Enc Offset Rd")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO10,0x800088)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(EGU,"mm")	
+}
+record(ao,"$(U):USALinEncOffset") {
+	field(DESC,"US Aisle Enc Offset Write")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(OUT,"@asyn(internalIO11,0x800090)")
+	field(DOL,"0")
+	field(OMSL,"supervisory")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):USALinEncoderOff.PROC PP NMS")
+}
+record(ai,"$(U):USALinEncOff") {
+	field(DESC,"US Aisle Enc Offset Rd")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO11,0x800090)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(EGU,"mm")	
+}
+record(ao,"$(U):DSWLinEncOffset") {
+	field(DESC,"DS Wall Enc Offset Write")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(OUT,"@asyn(internalIO12,0x800098)")
+	field(DOL,"0")
+	field(OMSL,"supervisory")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):DSWLinEncoderOff.PROC PP NMS")
+}
+record(ai,"$(U):DSWLinEncOff") {
+	field(DESC,"DS Wall Enc Offset Rd")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO12,0x800098)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(EGU,"mm")	
+}
+#################################################
+# Encoder Raw/Adjusted Data in DIO FPGA
+#################################################
+# Low 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):DSWLinEncRawLow") {
+	field(DESC,"DS Wall Enc Raw Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO5,0x800060)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):DSWLinEncRawHi.PROC PP NMS")	
+}
+# High 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):DSWLinEncRawHi") {
+	field(DESC,"DS Wall Enc Raw Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO6,0x800068)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):DSWLinEncRaw.PROC PP NMS")	
+}
+record(calc,"$(U):DSWLinEncRaw") {
+	field(DESC,"DSW Raw Enc Count")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):DSWLinEncRawLow.VAL NPP NMS")
+	field(INPB,"$(U):DSWLinEncRawHi.VAL NPP NMS")
+}
+######################################################
+# Low 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):USWLinEncRawLow") {
+	field(DESC,"US Wall Enc Raw Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO5,0x800040)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):USWLinEncRawHi.PROC PP NMS")	
+}
+# High 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):USWLinEncRawHi") {
+	field(DESC,"US Wall Enc Raw Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO6,0x800048)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):USWLinEncRaw.PROC PP NMS")	
+}
+record(calc,"$(U):USWLinEncRaw") {
+	field(DESC,"USW Raw Enc Count")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):USWLinEncRawLow.VAL NPP NMS")
+	field(INPB,"$(U):USWLinEncRawHi.VAL NPP NMS")
+}
+######################################################
+# Low 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):USALinEncRawLow") {
+	field(DESC,"US Aisle Enc Raw Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO5,0x800050)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):USALinEncRawHi.PROC PP NMS")	
+}
+# High 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):USALinEncRawHi") {
+	field(DESC,"US Aisle Enc Raw Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO6,0x800058)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):USALinEncRaw.PROC PP NMS")	
+}
+record(calc,"$(U):USALinEncRaw") {
+	field(DESC,"USA Raw Enc Count")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):USALinEncRawLow.VAL NPP NMS")
+	field(INPB,"$(U):USALinEncRawHi.VAL NPP NMS")
+}
+######################################################
+# Low 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):DSALinEncRawLow") {
+	field(DESC,"DS Aisle Enc Raw Low")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO5,0x800070)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(SCAN,".1 second")
+	field(FLNK,"$(U):DSALinEncRawHi.PROC PP NMS")	
+}
+# High 16-bits of raw encoder data + Offset 
+# in DIO FPGA
+record(ai,"$(U):DSALinEncRawHi") {
+	field(DESC,"DS Aisle Enc Raw Hi")
+#	field(ASG,"SYSTEM")
+	field(DTYP,"asynInt32")
+        field(INP,"@asyn(internalIO6,0x800078)")
+	field(ASLO,"1")
+	field(AOFF,"0")
+	field(PREC,"4")
+	field(EGU,"mm")	
+	field(FLNK,"$(U):DSALinEncRaw.PROC PP NMS")	
+}
+record(calc,"$(U):DSALinEncRaw") {
+	field(DESC,"DSA Raw Enc Count")
+	field(CALC,"(B<<16)+A")
+	field(INPA,"$(U):DSALinEncRawLow.VAL NPP NMS")
+	field(INPB,"$(U):DSALinEncRawHi.VAL NPP NMS")
+}
+######################################################
+

@@ -1,0 +1,43 @@
+###########  FPGA Firmware Revision  ############
+record(bi,"$(U):FirmwareRev0") {
+        field(DESC,"FPGA FW Bit 0")
+        field(PINI,"YES")
+        field(DTYP,"asynUInt32Digital")
+        field(INP,"@asynMask(pio24 0x8000f8 0x10)")
+        field(ZNAM,"ON")
+        field(ONAM,"OFF")
+}
+record(bi,"$(U):FirmwareRev1") {
+        field(DESC,"FPGA FW Bit 1")
+        field(PINI,"YES")
+        field(DTYP,"asynUInt32Digital")
+        field(INP,"@asynMask(pio24 0x8000f8 0x20)")
+        field(ZNAM,"ON")
+        field(ONAM,"OFF")
+}
+record(bi,"$(U):FirmwareRev2") {
+        field(DESC,"FPGA FW Bit 2")
+        field(PINI,"YES")
+        field(DTYP,"asynUInt32Digital")
+        field(INP,"@asynMask(pio24 0x8000f8 0x40)")
+        field(ZNAM,"ON")
+        field(ONAM,"OFF")
+}
+record(bi,"$(U):FirmwareRev3") {
+        field(DESC,"FPGA FW Bit 3")
+        field(PINI,"YES")
+        field(DTYP,"asynUInt32Digital")
+        field(INP,"@asynMask(pio24 0x8000f8 0x80)")
+        field(ZNAM,"ON")
+        field(ONAM,"OFF")
+}
+record(calc,"$(U):FirmwareRevision") {
+        field(DESC,"$(U) Firmware Rev")
+        field(PINI,"YES")
+        field(CALC,"A+2*B+4*C+8*D")
+        field(INPA,"$(U):FirmwareRev0 NPP NMS")
+        field(INPB,"$(U):FirmwareRev1 NPP NMS")
+        field(INPC,"$(U):FirmwareRev2 NPP NMS")
+        field(INPD,"$(U):FirmwareRev3 NPP NMS")
+}
+

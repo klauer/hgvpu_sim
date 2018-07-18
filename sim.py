@@ -47,6 +47,39 @@ class Axis:
         self._stopped = False
         self._move_task = None
 
+    async def assign(self, variable, value):
+        print(self, 'Set', variable, value)
+        if variable == 'prt':
+            # Set relative target position
+            self.desired_position = self.actual_position + int(value)
+        elif variable == 'pt':
+            # Set absolute target position
+            self.desired_position = int(value)
+        elif variable == 'vv':
+            self.home_velocity = int(value)
+        elif variable == 'o':
+            self.actual_position = int(value)
+            self.ext_encoder_position = int(value)
+        elif variable == 'kp':
+            self.kp = int(value)
+        elif variable == 'ki':
+            self.ki = int(value)
+        elif variable == 'kd':
+            self.kd = int(value)
+        elif variable == 'slm':
+            # Software limit mode
+            self.software_limits_fault = (int(value) == 1)
+        elif variable == 'slp':
+            self.software_limits[1] = int(value)
+        elif variable == 'sln':
+            self.software_limits[0] = int(value)
+        elif variable == 'vt':
+            self.desired_velocity = int(value)  # / self._frequency_scale  # TODO
+        elif variable == 'adt':
+            self.desired_acceleration = int(value)
+        else:
+            print('\n* Unhandled axis variable:', variable)
+
     def __repr__(self):
         return '<Axis {} Position={}>'.format(self.index,
                                               self.ext_encoder_position)
@@ -58,8 +91,6 @@ class Axis:
         self.closed_loop = False
         self.brake_engaged = True
         self.current = 0
-        # TODO: what does the controller respond here?
-        return b''
 
     async def stop(self):
         self._stopped = True
@@ -78,13 +109,12 @@ class Axis:
         velocity = self.desired_velocity
 
         delta_pos = desired_pos - start_pos
-        dt = delta_pos / velocity
+        dt = abs(delta_pos / velocity)
 
         t0 = time.monotonic()
 
-        print('\n* Motion from {} to {} at velocity {}; dpos={} dt={}'
-              ''.format(start_pos, desired_pos, velocity,
-                        delta_pos, dt))
+        print('\n* Axis: {} move from {} to {} at velocity {}; dpos={} dt={}'
+              ''.format(self, start_pos, desired_pos, velocity, delta_pos, dt))
 
         elapsed = 0
         while elapsed < dt:
@@ -166,12 +196,11 @@ class SimState:
 
     async def handle_off(self, axis, command, param=None):
         'Set open loop'
-        return axis.set_open_loop()
+        axis.set_open_loop()
 
     async def handle_rpc(self, axis, command, param=None):
-        'Read commanded position'
-        # TODO: RPC, RPT, and RTA
-        return axis.desired_position
+        'Read calculated current commanded position'
+        return axis.actual_position
 
     async def handle_rpt(self, axis, command, param=None):
         'Read target position'
@@ -180,22 +209,6 @@ class SimState:
     async def handle_rta(self, axis, command, param=None):
         'Read absolute target position'
         return axis.desired_position
-
-    async def handle_prt(self, axis, command, param=None):
-        'Set relative target position'
-        axis.desired_position = axis.actual_position + int(param)
-
-    async def handle_pt(self, axis, command, param=None):
-        'Set absolute target position'
-        axis.desired_position = int(param)
-
-    async def handle_adt(self, axis, command, param=None):
-        'Set desired acceleration'
-        axis.desired_acceleration = int(param)
-
-    async def handle_vt(self, axis, command, param=None):
-        'Set desired velocity'
-        axis.desired_velocity = int(param)  # / self._frequency_scale  # TODO
 
     async def handle_rpa(self, axis, command, param=None):
         'Read absolute actual position'
@@ -229,30 +242,13 @@ class SimState:
         axis.software_limits_enabled = True
         return b''
 
-    async def handle_slm(self, axis, command, param=None):
-        'Software limit mode'
-        axis.software_limits_fault = (int(param) == 1)
-        return b''
-
-    async def handle_sln(self, axis, command, param=None):
-        'Software low limit'
-        axis.software_limits[0] = int(param)
-        return b''
-
-    async def handle_slp(self, axis, command, param=None):
-        'Software high limit'
-        axis.software_limits[1] = int(param)
-        return b''
-
     async def handle_brkrls(self, axis, command, param=None):
         'Brake release'
         axis.brake_engaged = False
-        return b''
 
     async def handle_brkeng(self, axis, command, param=None):
         'Brake engage'
         axis.brake_engaged = True
-        return b''
 
     async def handle_rw(self, axis, command, param=0):
         'Read status word'
@@ -269,6 +265,20 @@ class SimState:
     async def handle_s(self, axis, command, param=0):
         'Stop'
         await axis.stop()
+
+    async def handle_run(self, axis, command, param=None):
+        'Home'
+        print('TODO')
+
+    async def handle_zs(self, axis, command, param=None):
+        'Reset flags'
+        print('TODO')
+
+    async def axis_assignment(self, axis, variable, value):
+        'Assign variable = value'
+        axis = self.axes[axis]
+        # self.variables[variable] = value
+        await axis.assign(variable, value)
 
     async def axis_command(self, axis, command, param=None):
         'Simulate a command being run on an axis, optionally with a parameter'
@@ -305,13 +315,18 @@ class SimState:
         if b'=' in line:
             # {command}:{axis_number}={PARAM}
             line, param = line.split(b'=')
+            assignment = True
         else:
             param = None
+            assignment = False
 
         if b':' in line:
             # {command}:{axis_number}={PARAM}
             line, canbus_target = line.split(b':', 1)
             axis = int(canbus_target)
+            if line[0] in self.addresses:
+                print('TODO: both canbus addr and axis specified?')
+                line = line[1:]
         elif line[0] in self.addresses:
             # {axis_byte}{command}({PARAM})
             axis = self.addresses[line[0]]
@@ -336,7 +351,10 @@ class SimState:
 
         print('<- {} / Axis {} Command {!r} Parameter: {}'
               ''.format(raw_line, axis, line, param), end=' | ')
-        return await self.axis_command(axis, line, param)
+        if assignment:
+            await self.axis_assignment(axis, line.lower(), param)
+        else:
+            return await self.axis_command(axis, line, param)
 
 
 class HgvpuSim(SimState):
@@ -349,25 +367,17 @@ class HgvpuSim(SimState):
         self.targets = [0, 0, 0, 0]
         self.target_velocity = 1
 
-    async def handle_iii(self, axis, command, param=None):
-        'Set target position for m1'
-        self.targets[0] = int(param)
+    async def axis_assignment(self, axis, variable, value):
+        await super().axis_assignment(axis, variable, value)
 
-    async def handle_jjj(self, axis, command, param=None):
-        'Set target position for m2'
-        self.targets[1] = int(param)
-
-    async def handle_kkk(self, axis, command, param=None):
-        'Set target position for m3'
-        self.targets[2] = int(param)
-
-    async def handle_lll(self, axis, command, param=None):
-        'Set target position for m4'
-        self.targets[3] = int(param)
-
-    async def handle_vvv(self, axis, command, param=None):
-        'Set target velocity for gap motion'
-        self.target_velocity = int(param)
+        positions = ('iii', 'jjj', 'kkk', 'lll')
+        if variable in positions:
+            idx = positions.index(variable)
+            # Set target position for m1, m2, m3, m4
+            self.targets[idx] = int(value)
+        elif variable == 'vvv':
+            # Set target velocity for gap motion
+            self.target_velocity = int(value)
 
     async def handle_gosub(self, axis, command, param=None):
         # self.
@@ -384,7 +394,7 @@ async def handle_sim(sim_state, reader, writer):
 
         response = await sim_state.received(buf.rstrip(input_delimiter))
         if response is None:
-            print()
+            print('(no response required from motor)')
         else:
             if isinstance(response, bytes):
                 ...

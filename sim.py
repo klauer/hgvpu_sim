@@ -11,9 +11,36 @@ Configure asyn on the IOC to connect to localhost, port 7001
 import asyncio
 import functools
 import time
+import enum
+import logging
 
+
+logger = logging.getLogger(__name__)
 input_delimiter = b' '
 output_delimiter = b'\r'
+
+
+class AxisStatus0(enum.IntFlag):
+    drive_ready = 0x1
+    motor_off = 0x2
+    moving = 0x4
+    volt_error = 0x8
+    overcurrent = 0x10
+    temp_minor = 0x20
+    pos_error = 0x40
+    vel_error = 0x80
+    temp_major = 0x100
+    deriv_error = 0x200
+    pos_lim_en = 0x400
+    neg_lim_en = 0x800
+    hist_pos_lim = 0x1000
+    hist_neg_lim = 0x2000
+    pos_lim = 0x4000
+    neg_lim = 0x8000
+
+
+class MultiTrajectoryStatus(enum.IntFlag):
+    in_progress = 1
 
 
 class Axis:
@@ -30,11 +57,12 @@ class Axis:
         self.desired_position = int(desired_position)
         self.torque = 0
         self.temperature = 22
-        self.status = {}
+        self.status = status
         self.brake_engaged = True
         self.closed_loop = False
         self.current = 0
         self.velocity = 0
+        self._moving = False
         self.desired_velocity = 1
         self.desired_acceleration = 0
         self.move_mode = 'position'
@@ -47,8 +75,28 @@ class Axis:
         self._stopped = False
         self._move_task = None
 
+        if 0 not in self.status:
+            self.status[0] = AxisStatus0.drive_ready
+        if 7 not in self.status:
+            self.status[7] = MultiTrajectoryStatus(0)
+
+    @property
+    def moving(self):
+        return self._moving
+
+    @moving.setter
+    def moving(self, moving):
+        self._moving = moving
+        if moving:
+            self.status[0] |= AxisStatus0.moving
+            self.current = 1000
+        else:
+            self.status[0] &= ~AxisStatus0.moving
+            self.status[7] &= ~MultiTrajectoryStatus.in_progress
+            self.current = 0
+
     async def assign(self, variable, value):
-        print(self, 'Set', variable, value)
+        logger.debug('%s Set %s = %s', self, variable, value)
         if variable == 'prt':
             # Set relative target position
             self.desired_position = self.actual_position + int(value)
@@ -66,9 +114,6 @@ class Axis:
             self.ki = int(value)
         elif variable == 'kd':
             self.kd = int(value)
-        elif variable == 'slm':
-            # Software limit mode
-            self.software_limits_fault = (int(value) == 1)
         elif variable == 'slp':
             self.software_limits[1] = int(value)
         elif variable == 'sln':
@@ -78,7 +123,7 @@ class Axis:
         elif variable == 'adt':
             self.desired_acceleration = int(value)
         else:
-            print('\n* Unhandled axis variable:', variable)
+            return variable
 
     def __repr__(self):
         return '<Axis {} Position={}>'.format(self.index,
@@ -90,19 +135,23 @@ class Axis:
     def set_open_loop(self):
         self.closed_loop = False
         self.brake_engaged = True
-        self.current = 0
+        self.status[0] |= AxisStatus0.motor_off
+        self.moving = False
 
     async def stop(self):
         self._stopped = True
 
     async def _move(self):
         if not self.move_mode == 'position':
-            print('TODO move mode:', self.move_mode)
+            logger.debug('%s TODO move mode: %s', self, self.move_mode)
+            self.moving = False
             return
 
         self._stopped = False
         self.closed_loop = True
         self.current = 1000
+        self.status[0] &= ~AxisStatus0.motor_off
+        self.moving = True
 
         start_pos = self.actual_position
         desired_pos = self.desired_position
@@ -113,35 +162,40 @@ class Axis:
 
         t0 = time.monotonic()
 
-        print('\n* Axis: {} move from {} to {} at velocity {}; dpos={} dt={}'
-              ''.format(self, start_pos, desired_pos, velocity, delta_pos, dt))
+        logger.info('Axis %s move: %s -> %s at velo %s; dpos=%s dt=%s',
+                    self, start_pos, desired_pos, velocity, delta_pos, dt)
 
         elapsed = 0
         while elapsed < dt:
             if self.brake_engaged:
-                print('Move interrupted: brake engaged')
+                logger.info('Move interrupted: brake engaged %s', self)
+                self.moving = False
                 return
             elif not self.closed_loop:
-                print('Move interrupted: open-loop')
+                logger.info('Move interrupted: open-loop %s', self)
+                self.moving = False
                 return
             elif self._stopped:
-                print('Move interrupted: stopped')
+                logger.info('Move interrupted: stopped %s', self)
+                self.moving = False
                 return
             self.actual_position = int(start_pos + (elapsed / dt) * delta_pos)
             self.ext_encoder_position = self.actual_position
-            print('Step', self.actual_position)
+            logger.debug('Move step %s', self)
             await asyncio.sleep(0.1)
             elapsed = time.monotonic() - t0
 
-        print('Move complete')
         self.ext_encoder_position = desired_pos
         self.actual_position = desired_pos
+        logger.info('Move complete %s', self)
+        self.moving = False
 
     async def move(self, loop):
         self.loop = loop
         if self._move_task is not None:
-            print('\n* Canceling other move')
-            self._move_task.cancel()
+            if not self._move_task.done():
+                logger.info('* Canceling other move %s', self)
+                self._move_task.cancel()
 
         self._move_task = loop.create_task(self._move())
 
@@ -242,6 +296,10 @@ class SimState:
         axis.software_limits_enabled = True
         return b''
 
+    async def handle_slm(self, axis, command, param=None):
+        'Software limit mode'
+        self.software_limits_fault = (int(param) == 1)
+
     async def handle_brkrls(self, axis, command, param=None):
         'Brake release'
         axis.brake_engaged = False
@@ -252,7 +310,7 @@ class SimState:
 
     async def handle_rw(self, axis, command, param=0):
         'Read status word'
-        return axis.get_status(int(param))
+        return int(axis.get_status(int(param)))
 
     async def handle_rsamp(self, axis, command, param=0):
         'Read sampling frequency'
@@ -268,11 +326,15 @@ class SimState:
 
     async def handle_run(self, axis, command, param=None):
         'Home'
-        print('TODO')
+        logger.info('TODO homing')
+
+    async def handle_ur(self, axis, command, param=None):
+        'Set/clear user flag bits'
+        logger.info('TODO set/clear user flag bits')
 
     async def handle_zs(self, axis, command, param=None):
-        'Reset flags'
-        print('TODO')
+        'Reset software system latches to power up state'
+        logger.info('TODO reset system latches')
 
     async def axis_assignment(self, axis, variable, value):
         'Assign variable = value'
@@ -292,7 +354,7 @@ class SimState:
         try:
             handler = getattr(self, 'handle_{}'.format(command))
         except AttributeError:
-            print('TODO', command)
+            logger.info('TODO write command handler for: %r', command)
             return b'0'
         else:
             axis = self.axes[axis]
@@ -320,12 +382,16 @@ class SimState:
             param = None
             assignment = False
 
+        # TODO driver bug? %cS:0
+        line = line.lstrip(b'\x01\x02\x03\x04')
+
         if b':' in line:
             # {command}:{axis_number}={PARAM}
             line, canbus_target = line.split(b':', 1)
             axis = int(canbus_target)
             if line[0] in self.addresses:
-                print('TODO: both canbus addr and axis specified?')
+                logger.warning('TODO: both canbus addr and axis specified? %s',
+                               line)
                 line = line[1:]
         elif line[0] in self.addresses:
             # {axis_byte}{command}({PARAM})
@@ -349,8 +415,8 @@ class SimState:
         if param is not None:
             param = param.decode('ascii')
 
-        print('<- {} / Axis {} Command {!r} Parameter: {}'
-              ''.format(raw_line, axis, line, param), end=' | ')
+        logger.debug('<- %s / Axis %s Command %r Parameter: %s',
+                     raw_line, axis, line, param)
         if assignment:
             await self.axis_assignment(axis, line.lower(), param)
         else:
@@ -358,7 +424,7 @@ class SimState:
 
 
 class HgvpuSim(SimState):
-    def __init__(self, loop, *, gap=20 * 1e6):
+    def __init__(self, loop, *, gap=10 * 1e5):
         super().__init__(loop,
                          positions={1: gap / 2.,
                                     2: gap / 2.,
@@ -368,7 +434,7 @@ class HgvpuSim(SimState):
         self.target_velocity = 1
 
     async def axis_assignment(self, axis, variable, value):
-        await super().axis_assignment(axis, variable, value)
+        unhandled = await super().axis_assignment(axis, variable, value)
 
         positions = ('iii', 'jjj', 'kkk', 'lll')
         if variable in positions:
@@ -378,10 +444,25 @@ class HgvpuSim(SimState):
         elif variable == 'vvv':
             # Set target velocity for gap motion
             self.target_velocity = int(value)
+        elif unhandled:
+            logger.warning('Unhandled axis variable %r', variable)
 
     async def handle_gosub(self, axis, command, param=None):
-        # self.
-        ...
+        subroutine_index = int(param)
+        if subroutine_index == 1:
+            logger.info('Synchronized motion start')
+            # HGVPU synchronized motion start
+            for axis_num, axis in self.axes.items():
+                axis.moving = True
+
+            for axis_num, target in enumerate(self.targets, 1):
+                axis = self.axes[axis_num]
+                axis.status[7] |= MultiTrajectoryStatus.in_progress
+
+                axis.desired_velocity = self.target_velocity
+                axis.desired_position = target
+                logger.info('* Axis %s to %s', axis_num, target)
+                await axis.move(self.loop)
 
 
 async def handle_sim(sim_state, reader, writer):
@@ -389,12 +470,12 @@ async def handle_sim(sim_state, reader, writer):
         try:
             buf = await reader.readuntil(input_delimiter)
         except Exception as ex:
-            print('Connection closed: {}', type(ex), ex)
+            logger.exception('Connection closed: %s', ex)
             break
 
         response = await sim_state.received(buf.rstrip(input_delimiter))
         if response is None:
-            print('(no response required from motor)')
+            logger.debug('(no response required from motor)')
         else:
             if isinstance(response, bytes):
                 ...
@@ -406,7 +487,7 @@ async def handle_sim(sim_state, reader, writer):
             if not response.endswith(output_delimiter):
                 response += output_delimiter
 
-            print('->', response)
+            logger.debug('-> %r', response)
             writer.write(response)
             await writer.drain()
 
@@ -419,7 +500,7 @@ def main(host, port):
     coro = asyncio.start_server(handler, host, port, loop=loop)
     server = loop.run_until_complete(coro)
 
-    print('Serving on {}'.format(server.sockets[0].getsockname()))
+    logger.info('Serving on %s', server.sockets[0].getsockname())
     try:
         loop.run_forever()
     except KeyboardInterrupt:
@@ -429,6 +510,12 @@ def main(host, port):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
+    if False:
+        # enable debug info
+        logger.setLevel('DEBUG')
+    else:
+        logger.setLevel('INFO')
     host = '127.0.0.1'
     port = 7001
     main(host, port)

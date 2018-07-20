@@ -92,7 +92,6 @@ class Axis:
             self.current = 1000
         else:
             self.status[0] &= ~AxisStatus0.moving
-            self.status[7] &= ~MultiTrajectoryStatus.in_progress
             self.current = 0
 
     async def assign(self, variable, value):
@@ -106,6 +105,7 @@ class Axis:
         elif variable == 'vv':
             self.home_velocity = int(value)
         elif variable == 'o':
+            logger.info('%s position set to %s', self, value)
             self.actual_position = int(value)
             self.ext_encoder_position = int(value)
         elif variable == 'kp':
@@ -139,6 +139,7 @@ class Axis:
         self.moving = False
 
     async def stop(self):
+        logger.info('Stop requested: %s', self)
         self._stopped = True
 
     async def _move(self):
@@ -196,8 +197,13 @@ class Axis:
             if not self._move_task.done():
                 logger.info('* Canceling other move %s', self)
                 self._move_task.cancel()
+            else:
+                logger.debug('Previous move result: %s',
+                             self._move_task.result())
 
-        self._move_task = loop.create_task(self._move())
+        task = loop.create_task(self._move())
+        self._move_task = task
+        return task
 
 
 class SimState:
@@ -454,15 +460,31 @@ class HgvpuSim(SimState):
             # HGVPU synchronized motion start
             for axis_num, axis in self.axes.items():
                 axis.moving = True
+                axis.status[7] |= MultiTrajectoryStatus.in_progress
 
+            tasks = []
             for axis_num, target in enumerate(self.targets, 1):
                 axis = self.axes[axis_num]
-                axis.status[7] |= MultiTrajectoryStatus.in_progress
 
                 axis.desired_velocity = self.target_velocity
                 axis.desired_position = target
                 logger.info('* Axis %s to %s', axis_num, target)
-                await axis.move(self.loop)
+                tasks.append(await axis.move(self.loop))
+
+            async def wait_sync_complete():
+                logger.info('* Waiting for synchronized motion to complete')
+                await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+
+                cancelled = any(task.cancelled() for task in tasks)
+                if cancelled:
+                    logger.info('* Synchronized motion cancelled')
+                else:
+                    logger.info('* Synchronized motion complete')
+
+                for axis in self.axes.values():
+                    axis.status[7] &= ~MultiTrajectoryStatus.in_progress
+
+            self.loop.create_task(wait_sync_complete())
 
 
 async def handle_sim(sim_state, reader, writer):

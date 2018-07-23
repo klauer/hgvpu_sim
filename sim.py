@@ -139,8 +139,10 @@ class Axis:
         self.moving = False
 
     async def stop(self):
-        logger.info('Stop requested: %s', self)
+        # logger.info('Stop requested: %s', self)
         self._stopped = True
+        if self._move_task is not None:
+            self._move_task.cancel()
 
     async def _move(self):
         if not self.move_mode == 'position':
@@ -188,6 +190,7 @@ class Axis:
 
         self.ext_encoder_position = desired_pos
         self.actual_position = desired_pos
+        await asyncio.sleep(0.2)
         logger.info('Move complete %s', self)
         self.moving = False
 
@@ -480,6 +483,8 @@ class HgvpuSim(SimState):
                     logger.info('* Synchronized motion cancelled')
                 else:
                     logger.info('* Synchronized motion complete')
+
+                await asyncio.sleep(0.5)
 
                 for axis in self.axes.values():
                     axis.status[7] &= ~MultiTrajectoryStatus.in_progress

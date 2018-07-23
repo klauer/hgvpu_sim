@@ -190,8 +190,8 @@ class Axis:
 
         self.ext_encoder_position = desired_pos
         self.actual_position = desired_pos
-        await asyncio.sleep(0.2)
         logger.info('Move complete %s', self)
+        await asyncio.sleep(0.2)
         self.moving = False
 
     async def move(self, loop):
@@ -201,8 +201,11 @@ class Axis:
                 logger.info('* Canceling other move %s', self)
                 self._move_task.cancel()
             else:
-                logger.debug('Previous move result: %s',
-                             self._move_task.result())
+                try:
+                    logger.debug('%s previous move result: %s', self,
+                                 self._move_task.result())
+                except Exception:
+                    logger.exception('%s previous move failed', self)
 
         task = loop.create_task(self._move())
         self._move_task = task
@@ -368,9 +371,15 @@ class SimState:
         else:
             axis = self.axes[axis]
             if param is None:
-                return await handler(axis, command)
+                coro = handler(axis, command)
             else:
-                return await handler(axis, command, param=param)
+                coro = handler(axis, command, param=param)
+
+            try:
+                return await coro
+            except Exception as ex:
+                logger.exception('Coroutine failed')
+                return b'0'
 
     async def received(self, line):
         '''Parse and evaluate a single command

@@ -23,7 +23,7 @@ SmartCreateController(S7,M1_USW,4,1,100,1000)
 cd "${TOP}/iocBoot/${IOC}"
 iocInit()
 
-dbpf "USEG:SIM:USWMotor:Sync" 1
+dbpf "USEG:SIM:USWMotor:Sync" 0
 
 dbpf USEG:SIM:USWMotor.MRES 1e-6
 dbpf USEG:SIM:USWMotor.ERES 1e-6
@@ -42,3 +42,19 @@ dbpf USEG:SIM:DSAGap.CALC A
 dbpf USEG:SIM:DSAGap.INPA "USEG:SIM:DSAMotor.RBV NPP MS"
 dbpf USEG:SIM:USAGap.CALC A
 dbpf USEG:SIM:USAGap.INPA "USEG:SIM:USAMotor.RBV NPP MS"
+
+dbpf USEG:SIM:USWMotor.VELO 1
+dbpf USEG:SIM:DSWMotor.VELO 1
+dbpf USEG:SIM:DSAMotor.VELO 1
+dbpf USEG:SIM:USAMotor.VELO 1
+
+epicsThreadSleep 1.0
+
+dbpf USEG:SIM:USWMotor.VAL 3.7
+dbpf USEG:SIM:DSWMotor.VAL 3.7
+dbpf USEG:SIM:DSAMotor.VAL 3.7
+dbpf USEG:SIM:USAMotor.VAL 3.7
+
+epicsThreadSleep 2.0
+
+dbpf "USEG:SIM:USWMotor:Sync" 1
